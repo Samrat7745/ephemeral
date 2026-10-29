@@ -30,6 +30,13 @@ spec:
         - name: "{{ .Chart.Name }}-ephemeral"
           image: "{{ .Values.ephemeral.image.registry }}/{{ .Values.ephemeral.image.repository }}:{{ .Values.ephemeral.image.tag }}"
           imagePullPolicy: {{ .Values.ephemeral.image.pullPolicy }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            seccompProfile:
+              type: RuntimeDefault
           ports:
             - name: http1
               containerPort: 8080

@@ -20,6 +20,10 @@ spec:
         name: {{ include "ephemeral.fullname" . }}-network-controller
     spec:
       serviceAccountName: network-controller
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
       {{- if .Values.networkController.image.pullSecrets }}
       imagePullSecrets:
         {{- range .Values.networkController.image.pullSecrets }}
@@ -30,6 +34,15 @@ spec:
       - name: "{{ .Chart.Name }}-network-controller"
         image: "{{ .Values.networkController.image.registry }}/{{ .Values.networkController.image.repository }}:{{ .Values.networkController.image.tag }}"
         imagePullPolicy: {{ .Values.networkController.image.pullPolicy }}
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          capabilities:
+            drop:
+              - ALL
+          seccompProfile:
+            type: RuntimeDefault
         env:
           - name: WATCH_NAMESPACE
             valueFrom:
@@ -41,6 +54,12 @@ spec:
                 fieldPath: metadata.name
           - name: OPERATOR_NAME
             value: "network-controller"
+        resources:
+          requests:
+            cpu: 50m
+            memory: 64Mi
+          limits:
+            memory: 256Mi
         volumeMounts:
             - name: config-volume
               mountPath: /etc/config
@@ -48,7 +67,6 @@ spec:
         - name: config-volume
           configMap:
             name: {{ include "ephemeral.fullname" . }}-network-controller-config
-      serviceAccountName: network-controller
 
 ---
 apiVersion: v1

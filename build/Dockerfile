@@ -1,15 +1,13 @@
-FROM registry.access.redhat.com/ubi7-dev-preview/ubi-minimal:7.6
+# Build from the repository root: docker build -f build/Dockerfile -t network-controller .
+FROM golang:1.26 AS build
+WORKDIR /src
+COPY go.mod go.sum ./
+RUN go mod download
+COPY cmd ./cmd
+COPY pkg ./pkg
+RUN CGO_ENABLED=0 go build -trimpath -o /out/network-controller ./cmd/network-controller
 
-ENV OPERATOR=/usr/local/bin/network-controller \
-    USER_UID=1001 \
-    USER_NAME=network-controller
-
-# install operator binary
-COPY build/_output/bin/network-controller ${OPERATOR}
-
-COPY build/bin /usr/local/bin
-RUN  /usr/local/bin/user_setup
-
-ENTRYPOINT ["/usr/local/bin/entrypoint"]
-
-USER ${USER_UID}
+FROM gcr.io/distroless/static-debian12:nonroot
+COPY --from=build /out/network-controller /usr/local/bin/network-controller
+USER 65532:65532
+ENTRYPOINT ["/usr/local/bin/network-controller"]

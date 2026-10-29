@@ -36,6 +36,15 @@ spec:
           requests:
             memory: "100Mi"
         imagePullPolicy: {{ .Values.discovery.image.pullPolicy }}
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          capabilities:
+            drop:
+              - ALL
+          seccompProfile:
+            type: RuntimeDefault
         volumeMounts:
           - name: config-volume
             mountPath: /etc/config
