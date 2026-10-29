@@ -5,21 +5,23 @@
 package discovery
 
 import (
+	"context"
 	"errors"
 	pb "github.com/carbynestack/ephemeral/pkg/discovery/transport/proto"
 	"github.com/carbynestack/ephemeral/pkg/network-controller/apis/mpc/v1alpha1"
-	clientset "github.com/carbynestack/ephemeral/pkg/network-controller/client/clientset/versioned"
 	"sync"
 	"time"
 
-	cs "github.com/knative/pkg/client/clientset/versioned"
 	"go.uber.org/zap"
+	istiov1 "istio.io/client-go/pkg/apis/networking/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	kubeinformers "k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/cache"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const defaultNamespace = "default"
@@ -36,8 +38,17 @@ func NewIstioNetworker(logger *zap.SugaredLogger, portRange string, delCh chan s
 		return nil, err
 	}
 
-	networkClient := clientset.NewForConfigOrDie(conf)
-	istioClient := cs.NewForConfigOrDie(conf)
+	scheme := runtime.NewScheme()
+	if err := v1alpha1.AddToScheme(scheme); err != nil {
+		return nil, err
+	}
+	if err := istiov1.AddToScheme(scheme); err != nil {
+		return nil, err
+	}
+	k8sClient, err := client.New(conf, client.Options{Scheme: scheme})
+	if err != nil {
+		return nil, err
+	}
 
 	portState, err := NewPortsState(portRange, []int32{})
 	if err != nil {
@@ -45,24 +56,22 @@ func NewIstioNetworker(logger *zap.SugaredLogger, portRange string, delCh chan s
 	}
 
 	return &IstioNetworker{
-		networkingClient: networkClient,
-		istioClient:      istioClient,
-		ports:            portState,
-		kubeConfig:       conf,
-		logger:           logger,
-		delCh:            delCh,
+		client:     k8sClient,
+		ports:      portState,
+		kubeConfig: conf,
+		logger:     logger,
+		delCh:      delCh,
 	}, nil
 }
 
 // IstioNetworker is an implementation of Networker interface which creates new networks backed by Istio configuration.
 type IstioNetworker struct {
-	networkingClient *clientset.Clientset
-	istioClient      *cs.Clientset
-	ports            *PortsState
-	kubeConfig       *rest.Config
-	logger           *zap.SugaredLogger
-	delCh            chan string
-	mux              sync.Mutex
+	client     client.Client
+	ports      *PortsState
+	kubeConfig *rest.Config
+	logger     *zap.SugaredLogger
+	delCh      chan string
+	mux        sync.Mutex
 }
 
 // Run starts the Networker. This method initializes k8s informers and synchorinizes various caches.
@@ -133,7 +142,7 @@ func (i *IstioNetworker) CreateNetwork(pl *pb.Player) (int32, error) {
 		// TODO: remove this 100 hack, it is a temp workaround for protobuf3.
 		Spec: v1alpha1.NetworkSpec{TargetPort: BasePort + pl.Id - 100, Port: port},
 	}
-	_, err = i.networkingClient.MpcV1alpha1().Networks(defaultNamespace).Create(&network)
+	err = i.client.Create(context.TODO(), &network)
 	if err != nil {
 		i.logger.Error(err)
 		return 0, err
@@ -158,7 +167,7 @@ func (i *IstioNetworker) sync() error {
 
 // deleteNetwork executes the given callback and if the result is successful it deletes the network from k8s.
 func (i *IstioNetworker) deleteNetwork(name string) error {
-	err := i.networkingClient.MpcV1alpha1().Networks("default").Delete(name, &metav1.DeleteOptions{})
+	err := i.client.Delete(context.TODO(), &v1alpha1.Network{ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: defaultNamespace}})
 	if err != nil {
 		i.logger.Errorf("Error deleting the network: %s", err)
 		return err
@@ -169,7 +178,8 @@ func (i *IstioNetworker) deleteNetwork(name string) error {
 // getUsedPorts iterates over the list of Istio gateways and collects that ports that are already in use.
 func (i *IstioNetworker) getUsedPorts() ([]int32, error) {
 	var usedPorts []int32
-	gateways, err := i.istioClient.NetworkingV1alpha3().Gateways("default").List(metav1.ListOptions{})
+	gateways := &istiov1.GatewayList{}
+	err := i.client.List(context.TODO(), gateways, client.InNamespace(defaultNamespace))
 	if err != nil {
 		i.logger.Error(err, "unable to retrieve the gateways")
 		return []int32{}, err

@@ -9,7 +9,7 @@ import (
 	pb "github.com/carbynestack/ephemeral/pkg/discovery/transport/proto"
 	"time"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	mb "github.com/vardius/message-bus"
 )

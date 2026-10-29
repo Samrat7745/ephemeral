@@ -15,7 +15,7 @@ import (
 
 	. "github.com/carbynestack/ephemeral/pkg/types"
 
-	"github.com/google/tcpproxy"
+	"github.com/inetaf/tcpproxy"
 	"go.uber.org/zap"
 )
 

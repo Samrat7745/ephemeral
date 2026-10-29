@@ -12,7 +12,7 @@ import (
 	"os"
 	"time"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
 	. "github.com/carbynestack/ephemeral/pkg/types"
@@ -404,7 +404,7 @@ var _ = Describe("Main", func() {
 						}
 						typedConf, err := InitTypedConfig(conf, logger)
 						Expect(err).To(HaveOccurred())
-						Expect(err.Error()).To(Equal("time: invalid duration corrupt"))
+						Expect(err.Error()).To(MatchRegexp(`^time: invalid duration "?corrupt"?$`))
 						Expect(typedConf).To(BeNil())
 					})
 				})
@@ -443,7 +443,7 @@ var _ = Describe("Main", func() {
 						}
 						typedConf, err := InitTypedConfig(conf, logger)
 						Expect(err).To(HaveOccurred())
-						Expect(err.Error()).To(Equal("time: invalid duration corrupt"))
+						Expect(err.Error()).To(MatchRegexp(`^time: invalid duration "?corrupt"?$`))
 						Expect(typedConf).To(BeNil())
 					})
 				})
@@ -482,7 +482,7 @@ var _ = Describe("Main", func() {
 						}
 						typedConf, err := InitTypedConfig(conf, logger)
 						Expect(err).To(HaveOccurred())
-						Expect(err.Error()).To(Equal("time: invalid duration corrupt"))
+						Expect(err.Error()).To(MatchRegexp(`^time: invalid duration "?corrupt"?$`))
 						Expect(typedConf).To(BeNil())
 					})
 				})
@@ -521,7 +521,7 @@ var _ = Describe("Main", func() {
 						}
 						typedConf, err := InitTypedConfig(conf, logger)
 						Expect(err).To(HaveOccurred())
-						Expect(err.Error()).To(Equal("time: invalid duration corrupt"))
+						Expect(err.Error()).To(MatchRegexp(`^time: invalid duration "?corrupt"?$`))
 						Expect(typedConf).To(BeNil())
 					})
 				})

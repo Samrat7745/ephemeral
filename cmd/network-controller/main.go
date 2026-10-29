@@ -8,66 +8,50 @@
 package main
 
 import (
-	"context"
 	"encoding/json"
 	"flag"
 	"fmt"
 	"os"
-	"runtime"
+	goruntime "runtime"
 
 	"github.com/carbynestack/ephemeral/pkg/network-controller/apis"
 	"github.com/carbynestack/ephemeral/pkg/network-controller/controller"
 	. "github.com/carbynestack/ephemeral/pkg/types"
 	"github.com/carbynestack/ephemeral/pkg/utils"
 
-	"github.com/operator-framework/operator-sdk/pkg/k8sutil"
-	"github.com/operator-framework/operator-sdk/pkg/leader"
-	"github.com/operator-framework/operator-sdk/pkg/log/zap"
-	"github.com/operator-framework/operator-sdk/pkg/metrics"
-	sdkVersion "github.com/operator-framework/operator-sdk/version"
-	"github.com/spf13/pflag"
-	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
-	"sigs.k8s.io/controller-runtime/pkg/client/config"
-	"sigs.k8s.io/controller-runtime/pkg/manager"
-	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
-	"sigs.k8s.io/controller-runtime/pkg/runtime/signals"
+	"k8s.io/apimachinery/pkg/runtime"
+	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
+	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/cache"
+	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 )
 
 // Change below variables to serve metrics on different host or port.
 var (
-	metricsHost       = "0.0.0.0"
-	metricsPort int32 = 8383
+	metricsHost = "0.0.0.0"
+	metricsPort = 8383
 )
-var log = logf.Log.WithName("cmd")
+var log = ctrl.Log.WithName("cmd")
 
-const defaultConfigLocation = "/etc/config/config.json"
+const (
+	defaultConfigLocation = "/etc/config/config.json"
+	leaderElectionID      = "network-controller-lock"
+	watchNamespaceEnvVar  = "WATCH_NAMESPACE"
+)
 
 func printVersion() {
-	log.Info(fmt.Sprintf("Go Version: %s", runtime.Version()))
-	log.Info(fmt.Sprintf("Go OS/Arch: %s/%s", runtime.GOOS, runtime.GOARCH))
-	log.Info(fmt.Sprintf("Version of operator-sdk: %v", sdkVersion.Version))
+	log.Info(fmt.Sprintf("Go Version: %s", goruntime.Version()))
+	log.Info(fmt.Sprintf("Go OS/Arch: %s/%s", goruntime.GOOS, goruntime.GOARCH))
 }
 
 func main() {
-	// Add the zap logger flag set to the CLI. The flag set must
-	// be added before calling pflag.Parse().
-	pflag.CommandLine.AddFlagSet(zap.FlagSet())
+	// Logger flags (--zap-devel, --zap-log-level, ...) are registered on the standard flag set.
+	zapOpts := zap.Options{}
+	zapOpts.BindFlags(flag.CommandLine)
+	flag.Parse()
 
-	// Add flags registered by imported packages (e.g. glog and
-	// controller-runtime)
-	pflag.CommandLine.AddGoFlagSet(flag.CommandLine)
-
-	pflag.Parse()
-
-	// Use a zap logr.Logger implementation. If none of the zap
-	// flags are configured (or if the zap flag set is not being
-	// used), this defaults to a production zap logger.
-	//
-	// The logger instantiated here can be changed to any logger
-	// implementing the logr.Logger interface. This logger will
-	// be propagated through the whole operator, generating
-	// uniform and structured logs.
-	logf.SetLogger(zap.Logger())
+	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&zapOpts)))
 
 	printVersion()
 
@@ -77,37 +61,38 @@ func main() {
 		os.Exit(1)
 	}
 	log.Info(fmt.Sprintf("Starting with the config:\n%+v", networkControllerConfig))
-	if err != nil {
-		panic(err)
-	}
 
-	namespace, err := k8sutil.GetWatchNamespace()
-	if err != nil {
-		log.Error(err, "Failed to get watch namespace")
+	namespace, found := os.LookupEnv(watchNamespaceEnvVar)
+	if !found {
+		log.Error(fmt.Errorf("%s must be set", watchNamespaceEnvVar), "Failed to get watch namespace")
 		os.Exit(1)
 	}
 
-	// Get a config to talk to the apiserver
-	cfg, err := config.GetConfig()
-	if err != nil {
+	scheme := runtime.NewScheme()
+	if err := clientgoscheme.AddToScheme(scheme); err != nil {
+		log.Error(err, "")
+		os.Exit(1)
+	}
+	// Setup Scheme for all resources
+	if err := apis.AddToScheme(scheme); err != nil {
 		log.Error(err, "")
 		os.Exit(1)
 	}
 
-	ctx := context.TODO()
-
-	// Become the leader before proceeding
-	err = leader.Become(ctx, "network-controller-lock")
-	if err != nil {
-		log.Error(err, "")
-		os.Exit(1)
+	opts := ctrl.Options{
+		Scheme:  scheme,
+		Metrics: metricsserver.Options{BindAddress: fmt.Sprintf("%s:%d", metricsHost, metricsPort)},
+		// Become the leader before proceeding (coordination.k8s.io Lease).
+		LeaderElection:          true,
+		LeaderElectionID:        leaderElectionID,
+		LeaderElectionNamespace: namespace,
+	}
+	if namespace != "" {
+		opts.Cache = cache.Options{DefaultNamespaces: map[string]cache.Config{namespace: {}}}
 	}
 
-	// Create a new Cmd to provide shared dependencies and start components
-	mgr, err := manager.New(cfg, manager.Options{
-		Namespace:          namespace,
-		MetricsBindAddress: fmt.Sprintf("%s:%d", metricsHost, metricsPort),
-	})
+	// Create a new manager to provide shared dependencies and start components
+	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), opts)
 	if err != nil {
 		log.Error(err, "")
 		os.Exit(1)
@@ -115,28 +100,15 @@ func main() {
 
 	log.Info("Registering Components.")
 
-	// Setup Scheme for all resources
-	if err := apis.AddToScheme(mgr.GetScheme()); err != nil {
-		log.Error(err, "")
-		os.Exit(1)
-	}
-
 	// Setup all Controllers
 	if err := controller.AddToManager(mgr, networkControllerConfig); err != nil {
 		log.Error(err, "")
 		os.Exit(1)
 	}
 
-	// Create Service object to expose the metrics port.
-	_, err = metrics.ExposeMetricsPort(ctx, metricsPort)
-	if err != nil {
-		log.Info(err.Error())
-	}
-
 	log.Info("Starting the Cmd.")
 
-	// Start the Cmd
-	if err := mgr.Start(signals.SetupSignalHandler()); err != nil {
+	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
 		log.Error(err, "Manager exited non-zero")
 		os.Exit(1)
 	}

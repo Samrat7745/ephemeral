@@ -10,7 +10,7 @@ import (
 	"net"
 	"time"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	"google.golang.org/grpc"
 
 	. "github.com/carbynestack/ephemeral/pkg/types"

@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"github.com/carbynestack/ephemeral/pkg/amphora"
 	. "github.com/carbynestack/ephemeral/pkg/ephemeral/io"
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"go.uber.org/zap"
 	"net"

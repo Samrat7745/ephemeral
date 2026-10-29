@@ -9,7 +9,7 @@ package utils
 
 import (
 	"fmt"
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"io/ioutil"
 	"math/rand"
@@ -21,7 +21,7 @@ import (
 var _ = Describe("FileIO utils", func() {
 	var fileIO FileIO
 	var testFolderPath string
-	BeforeSuite(func() {
+	BeforeEach(func() {
 		rand.Seed(time.Now().UnixNano())
 		fileIO = &OSFileIO{}
 	})

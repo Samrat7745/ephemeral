@@ -14,7 +14,7 @@ import (
 	. "github.com/carbynestack/ephemeral/pkg/types"
 	"time"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	mb "github.com/vardius/message-bus"
 	"go.uber.org/zap"

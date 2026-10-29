@@ -11,7 +11,7 @@ import (
 	"net"
 	"time"
 
-	"github.com/google/tcpproxy"
+	"github.com/inetaf/tcpproxy"
 	"go.uber.org/zap"
 )
 

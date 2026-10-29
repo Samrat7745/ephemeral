@@ -6,6 +6,7 @@ package integration
 
 import (
 	"bytes"
+	"context"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
@@ -21,7 +22,7 @@ import (
 	. "github.com/carbynestack/ephemeral/pkg/types"
 
 	"github.com/google/uuid"
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -365,7 +366,7 @@ func getRootDomain() string {
 	}
 	kubeClient := kubernetes.NewForConfigOrDie(conf)
 
-	configMap, err := kubeClient.CoreV1().ConfigMaps(servingNs).Get("config-domain", metav1.GetOptions{})
+	configMap, err := kubeClient.CoreV1().ConfigMaps(servingNs).Get(context.TODO(), "config-domain", metav1.GetOptions{})
 	if err != nil {
 		panic(err)
 	}

@@ -85,7 +85,7 @@ func (c *Carrier) Connect(ctx context.Context, playerID int32, host string, port
 //   - Careful: The other header parts are not part of this communication, they are only used when reading tuple files
 //   - length of the prime as 4-byte number little-endian (e.g. 16),
 //   - prime in big-endian (e.g. 170141183460469231731687303715885907969)
-func (c Carrier) readPrime() error {
+func (c *Carrier) readPrime() error {
 	const size = 4
 	readBytes := make([]byte, size)
 	_, err := io.LimitReader(c.Conn, size).Read(readBytes)
