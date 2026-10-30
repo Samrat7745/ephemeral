@@ -14,7 +14,7 @@ tls:
 
 discovery:
   service:
-    annotations: []
+    annotations: {}
   image:
     registry: ghcr.io
     repository: carbynestack/ephemeral/discovery
@@ -33,7 +33,7 @@ discovery:
 
 ephemeral:
   service:
-    annotations: []
+    annotations: {}
   knative:
     activation:
       timeoutSeconds: 3600

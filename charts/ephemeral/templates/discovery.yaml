@@ -59,7 +59,7 @@ apiVersion: v1
 metadata:
   name: {{ include "ephemeral.fullname" . }}-discovery
   namespace: {{ .Release.Namespace }}
-  {{- if .Values.ephemeral.service.annotations }}
+  {{- if .Values.discovery.service.annotations }}
   annotations:
 {{ .Values.discovery.service.annotations | toYaml | trim | indent 4 }}
   {{- end}}
