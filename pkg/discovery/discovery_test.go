@@ -90,6 +90,9 @@ func generateDiscoveryNGTestsWithPlayerCount(playerCount int) {
 				playersReady := GenerateEvents(PlayersReady, "0")[0]
 				_, allPlayerReadyEvents := createPlayersAndPlayerReadyEvents(playerCount, frontendAddress)
 				assertExternalEventBody(playersReady, ClientOutgoingEventsTopic, g, done, func(event *proto.Event) {
+					// the bookkeeping is guarded by the mutex of the service
+					s.mux.Lock()
+					defer s.mux.Unlock()
 					Expect(len(event.Players)).To(Equal(playerCount))
 					for i := 0; i < playerCount; i++ {
 						Expect(event.Players[i].Ip).To(Equal(frontendAddress))
@@ -181,6 +184,8 @@ func generateDiscoveryNGTestsWithPlayerCount(playerCount int) {
 					allPlayerReadyEventsInGame1[i].Players[0] = allPlayers[i]
 				}
 				assertExternalEventBody(playersReady, ClientOutgoingEventsTopic, g, done, func(event *proto.Event) {
+					s.mux.Lock()
+					defer s.mux.Unlock()
 					pp, _ := s.players["0"]
 					for i := 0; i < playerCount; i++ {
 						p := pp[PlayerID(int32(i))]
@@ -188,6 +193,8 @@ func generateDiscoveryNGTestsWithPlayerCount(playerCount int) {
 					}
 				})
 				assertExternalEventBody(playersReady1, ClientOutgoingEventsTopic, g, done, func(event *proto.Event) {
+					s.mux.Lock()
+					defer s.mux.Unlock()
 					pp, _ := s.players["1"]
 					for i := 0; i < playerCount; i++ {
 						p := pp[PlayerID(int32(i))]
@@ -341,6 +348,8 @@ func generateDiscoveryNGTestsWithPlayerCount(playerCount int) {
 					defer func() {
 						done <- struct{}{}
 					}()
+					s.mux.Lock()
+					defer s.mux.Unlock()
 					Expect(len(s.players["0"])).To(Equal(1))
 					Expect(s.networks["a"]).To(Equal(int32(30000)))
 					Expect(len(s.networks)).To(Equal(1))

@@ -56,7 +56,19 @@ jobs:
           go build ./...
       - name: Perform Tests
         run: |
-          go test ./... -coverprofile coverage.txt.tmp && cat coverage.txt.tmp | grep -Ev "fake|helper" > coverage.txt
+          go test -race -p 2 ./... -coverprofile coverage.txt.tmp && cat coverage.txt.tmp | grep -Ev "fake|helper" > coverage.txt
+      - name: Check Coverage Floor
+        run: |
+          scripts/check-coverage.sh coverage.txt
+      - name: Fuzz Smoke Tests
+        if: ${{ github.event_name == 'pull_request' }}
+        run: |
+          set -euo pipefail
+          # Short runs on the seed corpora (testdata/fuzz) plus 15s of mutation per target.
+          go test -run='^$' -fuzz='^FuzzGetUserFromAuthHeader$' -fuzztime=15s -parallel 2 ./pkg/ephemeral
+          go test -run='^$' -fuzz='^FuzzActivationBody$' -fuzztime=15s -parallel 2 ./pkg/ephemeral
+          go test -run='^$' -fuzz='^FuzzNewPortsState$' -fuzztime=15s -parallel 2 ./pkg/discovery
+          go test -run='^$' -fuzz='^FuzzEventUnmarshal$' -fuzztime=15s -parallel 2 ./pkg/discovery/transport/proto
       - name: Publishing Coverage
         uses: codecov/codecov-action@v5
         with:

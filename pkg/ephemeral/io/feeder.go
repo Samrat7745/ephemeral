@@ -64,7 +64,9 @@ func (f *AmphoraFeeder) LoadFromSecretStoreAndFeed(act *Activation, feedPort str
 		}
 		policy := DefaultPolicy
 		owner, _ := findValueForKeyInTags(osh.Tags, "owner")
-		policy, _ = findValueForKeyInTags(osh.Tags, "accessPolicy")
+		if p, ok := findValueForKeyInTags(osh.Tags, "accessPolicy"); ok {
+			policy = p
+		}
 		inputs = append(inputs, ActivationInput{
 			SecretId:     osh.SecretID,
 			Owner:        owner,

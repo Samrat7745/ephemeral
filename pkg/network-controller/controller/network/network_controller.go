@@ -10,6 +10,7 @@ package network
 import (
 	"context"
 	"fmt"
+	"reflect"
 
 	mpcv1alpha1 "github.com/carbynestack/ephemeral/pkg/network-controller/apis/mpc/v1alpha1"
 	configtypes "github.com/carbynestack/ephemeral/pkg/types"
@@ -25,6 +26,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/log"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
 var podLabel = "mpc.podName"
@@ -79,6 +81,13 @@ func (r *ReconcileNetwork) Reconcile(ctx context.Context, request ctrl.Request) 
 		return ctrl.Result{}, err
 	}
 
+	// Ports outside of the valid range can never be served, retrying does not help.
+	if !validPort(instance.Spec.Port) || !validPort(instance.Spec.TargetPort) {
+		err := fmt.Errorf("invalid ports in Network spec: port=%d targetPort=%d, both must be in 1..65535", instance.Spec.Port, instance.Spec.TargetPort)
+		reqLogger.Error(err, "not creating any resources")
+		return ctrl.Result{}, reconcile.TerminalError(err)
+	}
+
 	// TODO: this is a pretty hacky solution, if the pod is reconciled after an update, the label will be removed.
 	// Label the pod would like to assign a service to.
 
@@ -121,6 +130,15 @@ func (r *ReconcileNetwork) Reconcile(ctx context.Context, request ctrl.Request) 
 		}
 	} else if err != nil {
 		return ctrl.Result{}, err
+	} else if !reflect.DeepEqual(found.Spec.Ports, service.Spec.Ports) || !reflect.DeepEqual(found.Spec.Selector, service.Spec.Selector) {
+		// Converge a Service that exists with a different spec, e.g. a stale target port.
+		reqLogger.Info("Updating the Service", "Service.Namespace", service.Namespace, "Service.Name", service.Name)
+		found.Spec.Ports = service.Spec.Ports
+		found.Spec.Selector = service.Spec.Selector
+		if err := r.client.Update(ctx, found); err != nil {
+			reqLogger.Error(err, "not able to update the service")
+			return ctrl.Result{}, err
+		}
 	}
 
 	reqLogger.Info(fmt.Sprintf("Reconcile with the config:\n%+v", r.config))
@@ -141,6 +159,10 @@ func (r *ReconcileNetwork) Reconcile(ctx context.Context, request ctrl.Request) 
 			reqLogger.Error(err, "not able to create the gateway")
 			return ctrl.Result{}, err
 		}
+	} else if err != nil {
+		// e.g. the Istio CRDs are not installed: requeue instead of silently continuing.
+		reqLogger.Error(err, "error retrieving the gateway")
+		return ctrl.Result{}, err
 	}
 
 	vs := newVirtualService(instance, instance.Spec.Port, gwName)
@@ -162,6 +184,10 @@ func (r *ReconcileNetwork) Reconcile(ctx context.Context, request ctrl.Request) 
 	}
 
 	return ctrl.Result{}, nil
+}
+
+func validPort(p int32) bool {
+	return p >= 1 && p <= 65535
 }
 
 func serviceName(base string) string {
@@ -246,9 +272,10 @@ func newVirtualService(cr *mpcv1alpha1.Network, port int32, gateway string) *ist
 }
 
 func newGateway(cr *mpcv1alpha1.Network, port int32, config *configtypes.NetworkControllerConfig) *istiov1.Gateway {
-	gwlb := cr.Labels
-	if gwlb == nil {
-		gwlb = map[string]string{}
+	// Copy the labels, the Network (and the labels of the VirtualService derived from it) must not be modified.
+	gwlb := map[string]string{}
+	for k, v := range cr.Labels {
+		gwlb[k] = v
 	}
 	gwlb["mpc.gateway"] = "true"
 	selectors := map[string]string{}

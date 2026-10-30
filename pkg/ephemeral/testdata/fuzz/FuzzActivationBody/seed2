@@ -1,0 +1,2 @@
+go test fuzz v1
+string("{\"gameID\":\"71b2a100-f3f6-11e9-81b4-2a2ae2dbcce4\",\"secretParams\":[\"eA==\",\"not base64!\"]}")

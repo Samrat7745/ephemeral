@@ -69,6 +69,7 @@ func (c *Client) GetSecretShare(id string, programIdentifier string) (SecretShar
 	if err != nil {
 		return os, err
 	}
+	defer body.Close()
 	err = json.NewDecoder(body).Decode(&os)
 	if err != nil {
 		return os, fmt.Errorf("amphora returned an invalid response body: %s", err)
@@ -82,16 +83,16 @@ func (c *Client) CreateSecretShare(os *SecretShare) error {
 	if err != nil {
 		return err
 	}
-	req, err := http.NewRequest(http.MethodPost, c.URL.String()+fmt.Sprintf("%s", secretShareURI), bytes.NewBuffer(jsonMarshalled))
+	req, err := http.NewRequest(http.MethodPost, c.URL.String()+secretShareURI, bytes.NewBuffer(jsonMarshalled))
+	if err != nil {
+		return err
+	}
 	req.Header.Add("Content-Type", "application/json")
+	body, err := c.doRequest(req, http.StatusCreated)
 	if err != nil {
 		return err
 	}
-	_, err = c.doRequest(req, http.StatusCreated)
-	if err != nil {
-		return err
-	}
-	return nil
+	return body.Close()
 }
 
 // doRequest is a helper method that sends an HTTP request, compares the returned response code with expected and
@@ -102,6 +103,7 @@ func (c *Client) doRequest(req *http.Request, expected int) (io.ReadCloser, erro
 		return nil, fmt.Errorf("http client failed sending request: %s", err)
 	}
 	if resp.StatusCode != expected {
+		defer resp.Body.Close()
 		bodyBytes, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
 			return nil, err

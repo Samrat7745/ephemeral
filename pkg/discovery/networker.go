@@ -155,14 +155,12 @@ func (i *IstioNetworker) sync() error {
 	i.mux.Lock()
 	defer i.mux.Unlock()
 
+	// Do not sync with an empty list if the gateways could not be listed, that would release ports which are in use.
 	usedPorts, err := i.getUsedPorts()
-	err = i.ports.Sync(usedPorts)
-
 	if err != nil {
 		return err
 	}
-
-	return nil
+	return i.ports.Sync(usedPorts)
 }
 
 // deleteNetwork executes the given callback and if the result is successful it deletes the network from k8s.

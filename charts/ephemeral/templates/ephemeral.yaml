@@ -14,7 +14,7 @@ spec:
     metadata:
       annotations:
       {{- if .Values.ephemeral.service.annotations }}
-{{ .Values.ephemeral.service.annotations | toYaml | trim | indent 10 }}
+{{ .Values.ephemeral.service.annotations | toYaml | trim | indent 8 }}
       {{- end}}
         autoscaling.knative.dev/minScale: "{{ .Values.ephemeral.minScale }}"
     spec:

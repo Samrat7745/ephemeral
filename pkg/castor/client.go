@@ -66,6 +66,7 @@ func (c *Client) GetTuples(count int32, tt TupleType, requestID uuid.UUID) (*Tup
 	if err != nil {
 		return nil, fmt.Errorf("communication with castor failed: %s", err)
 	}
+	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
 		bodyBytes, err := ioutil.ReadAll(resp.Body)
 		if err != nil {

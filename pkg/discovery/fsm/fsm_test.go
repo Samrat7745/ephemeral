@@ -59,7 +59,7 @@ var _ = Describe("FSM", func() {
 			fsm.Write(&event)
 			resp := <-respCh
 			Expect(resp).To(Equal("Registering"))
-			Expect(fsm.current).To(Equal("Registering"))
+			Expect(fsm.Current()).To(Equal("Registering"))
 		})
 		It("runs a callback before state transition", func() {
 			cb := BeforeEnter("Registering").Do(sideEffect)
@@ -78,7 +78,7 @@ var _ = Describe("FSM", func() {
 			fsm.Write(&event)
 			res := <-respCh
 			Expect(res).To(Equal("Init"))
-			Expect(fsm.current).To(Equal("Registering"))
+			Expect(fsm.Current()).To(Equal("Registering"))
 		})
 	})
 
@@ -122,7 +122,7 @@ var _ = Describe("FSM", func() {
 			Expect(resp).To(Equal("timeout"))
 			time.Sleep(2 * timeout)
 			// The second timeout hit makes sure the timer was reset.
-			Expect(timeoutCounter).To(Equal(int32(2)))
+			Expect(atomic.LoadInt32(&timeoutCounter)).To(Equal(int32(2)))
 			Expect(len(fsm.History().GetEvents())).To(Equal(2))
 		})
 	})

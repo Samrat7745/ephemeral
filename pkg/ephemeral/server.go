@@ -220,7 +220,9 @@ func (s *Server) CompilationHandler(next http.Handler) http.Handler {
 		s.logger.Debugf("Executing Compilation Handler: %v", conf.Act)
 		// These channels initialized here, because they must be unique
 		// for each incoming request.
-		s.respCh = make(chan []byte)
+		// respCh is buffered, so the engine of a game whose request already returned (e.g. due to a timeout) can
+		// still deliver its result and terminate instead of blocking forever (SPECS-2171).
+		s.respCh = make(chan []byte, 1)
 		s.errCh = make(chan error, parallelGames)
 		s.execErrCh = make(chan error, parallelGames)
 
@@ -269,9 +271,12 @@ func (s *Server) ActivationHandler(writer http.ResponseWriter, req *http.Request
 	}
 	s.logger.Debugf("Retrieved pod name %v", pod)
 
-	spdz := NewSPDZWrapper(ctxConfig, s.respCh, s.execErrCh, s.logger, s.activate)
+	// Capture the channels of this request, the server fields are replaced by the next request.
+	respCh, errCh, execErrCh := s.respCh, s.errCh, s.execErrCh
+
+	spdz := NewSPDZWrapper(ctxConfig, respCh, execErrCh, s.logger, s.activate)
 	plIO := s.getPlayer(func() AbstractPlayerWithIO {
-		pl, err := NewPlayerWithIO(ctxConfig, &s.config.DiscoveryConfig, pod, spdz, s.config.StateTimeout, s.config.ComputationTimeout, s.errCh, s.logger)
+		pl, err := NewPlayerWithIO(ctxConfig, &s.config.DiscoveryConfig, pod, spdz, s.config.StateTimeout, s.config.ComputationTimeout, errCh, s.logger)
 		if err != nil {
 			s.logger.Errorf("Failed to initialize Player: %v", err)
 		}
@@ -281,15 +286,15 @@ func (s *Server) ActivationHandler(writer http.ResponseWriter, req *http.Request
 	plIO.Start()
 
 	select {
-	case stdout := <-s.respCh:
+	case stdout := <-respCh:
 		writer.WriteHeader(http.StatusOK)
 		writer.Write(stdout)
-	case err := <-s.errCh:
+	case err := <-errCh:
 		msg := fmt.Sprintf("error while talking to Discovery: %s", err)
 		writer.WriteHeader(http.StatusInternalServerError)
 		writer.Write([]byte(msg))
 		s.logger.Errorw(msg, GameID, ctxConfig.Act.GameID)
-	case err := <-s.execErrCh:
+	case err := <-execErrCh:
 		msg := fmt.Sprintf("error during MPC execution: %s", err)
 		writer.WriteHeader(http.StatusInternalServerError)
 		writer.Write([]byte(msg))

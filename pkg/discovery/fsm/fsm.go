@@ -113,16 +113,16 @@ func (f *FSM) Run(errChan chan error) {
 	for {
 		select {
 		case <-f.ctx.Done():
-			f.current = Stopped
+			f.setStopped()
 			f.timer.Stop()
 			return
 		case <-f.doneCh:
-			f.current = Stopped
+			f.setStopped()
 			f.timer.Stop()
 			return
 		case <-f.pingCh:
 			if err := f.process(); err != nil {
-				f.current = Stopped
+				f.setStopped()
 				select {
 				case errChan <- err:
 				default:
@@ -139,6 +139,13 @@ func (f *FSM) Run(errChan chan error) {
 		}
 
 	}
+}
+
+// setStopped marks the FSM as stopped. Current() is called from other goroutines, so the state is guarded.
+func (f *FSM) setStopped() {
+	f.mux.Lock()
+	defer f.mux.Unlock()
+	f.current = Stopped
 }
 
 // Stop stops the FSM. No other state transition is possible after the call.

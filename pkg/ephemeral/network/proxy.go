@@ -59,6 +59,9 @@ type Proxy struct {
 func (p *Proxy) Run(ctx *CtxConfig, errCh chan error) error {
 	p.proxy = &tcpproxy.Proxy{}
 	p.ctx = ctx
+	// Reset the indicator of a previous game: if Run fails before the proxy is started, Stop must not wait for a
+	// proxy that never ran (SPECS-2171).
+	p.activeProxyIndicatorCh = nil
 
 	var pats []*PingAwareTarget
 	for _, proxyEntry := range ctx.ProxyEntries {
@@ -72,13 +75,16 @@ func (p *Proxy) Run(ctx *CtxConfig, errCh chan error) error {
 	}
 
 	p.logger.Infow("Starting TCP Proxy", GameID, ctx.Act.GameID)
+	// The channel is created synchronously, so that a concurrent Stop never observes the one of a previous game.
+	activeCh := make(chan struct{})
+	p.activeProxyIndicatorCh = activeCh
+	proxy := p.proxy
 	go func() {
 		defer close(errCh)
-		p.activeProxyIndicatorCh = make(chan struct{})
-		err := p.proxy.Start()
+		err := proxy.Start()
 		if err == nil {
-			close(p.activeProxyIndicatorCh)
-			err = p.proxy.Wait()
+			close(activeCh)
+			err = proxy.Wait()
 		}
 		errCh <- err
 	}()
@@ -226,6 +232,10 @@ func RetryingDialerWithContextAndLogTimeout(sleep time.Duration, timeout time.Du
 		defer logTicker.Stop()
 		defer connectTimer.Stop()
 		for {
+			// Prefer the cancellation over a ready connect timer (select picks randomly between ready cases).
+			if ctx.Err() != nil {
+				return conn, errors.New(fmt.Sprintf("cancelled connection attempt for %s:%s - context done", addr, port))
+			}
 			select {
 			case <-ctx.Done():
 				return conn, errors.New(fmt.Sprintf("cancelled connection attempt for %s:%s - context done", addr, port))

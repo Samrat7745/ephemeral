@@ -27,6 +27,10 @@ func NewPortsState(rng string, used []int32) (*PortsState, error) {
 		return &PortsState{}, err
 	}
 
+	if start < 1 || end > 65535 || start > end {
+		return &PortsState{}, errors.New("the port range must satisfy 1 <= start_port <= end_port <= 65535")
+	}
+
 	state := &PortsState{start: int32(start), end: int32(end), lastUsed: -1}
 
 	if len(used) > 0 {

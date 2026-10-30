@@ -1,0 +1,2 @@
+go test fuzz v1
+[]byte("\n\u000bPlayerReady\u0012\u0001g")
