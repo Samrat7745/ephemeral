@@ -32,6 +32,9 @@ spec:
           imagePullPolicy: {{ .Values.ephemeral.image.pullPolicy }}
           securityContext:
             allowPrivilegeEscalation: false
+            runAsNonRoot: true
+            runAsUser: {{ .Values.ephemeral.runAsUser }}
+            runAsGroup: {{ .Values.ephemeral.runAsUser }}
             capabilities:
               drop:
                 - ALL

@@ -50,6 +50,8 @@ ephemeral:
       memory:
       cpu:
   minScale: 1
+  # uid/gid the service runs as; must own the MP-SPDZ installation (user "cs", 1000, in the ephemeral images).
+  runAsUser: 1000
   programIdentifier: "ephemeral-generic"
   authUserIdField: "sub"
   opa:
