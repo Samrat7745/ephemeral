@@ -11,7 +11,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/carbynestack/ephemeral/pkg/types"
+	"github.com/Samrat7745/ephemeral/pkg/types"
 	"github.com/google/uuid"
 )
 

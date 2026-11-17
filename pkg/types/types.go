@@ -7,10 +7,10 @@ package types
 import (
 	"context"
 	"crypto/tls"
-	"github.com/carbynestack/ephemeral/pkg/amphora"
-	"github.com/carbynestack/ephemeral/pkg/castor"
-	pb "github.com/carbynestack/ephemeral/pkg/discovery/transport/proto"
-	"github.com/carbynestack/ephemeral/pkg/opa"
+	"github.com/Samrat7745/ephemeral/pkg/amphora"
+	"github.com/Samrat7745/ephemeral/pkg/castor"
+	pb "github.com/Samrat7745/ephemeral/pkg/discovery/transport/proto"
+	"github.com/Samrat7745/ephemeral/pkg/opa"
 	"math/big"
 	"time"
 

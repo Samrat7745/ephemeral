@@ -12,7 +12,7 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
-	"github.com/carbynestack/ephemeral/pkg/utils"
+	"github.com/Samrat7745/ephemeral/pkg/utils"
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 	"math/big"
@@ -23,8 +23,8 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/carbynestack/ephemeral/pkg/castor"
-	. "github.com/carbynestack/ephemeral/pkg/types"
+	"github.com/Samrat7745/ephemeral/pkg/castor"
+	. "github.com/Samrat7745/ephemeral/pkg/types"
 )
 
 // PipeWriterFactory is a factory method to create new PipeWriter.

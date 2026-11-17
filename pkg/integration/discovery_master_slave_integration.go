@@ -6,14 +6,14 @@ package integration
 
 import (
 	"context"
-	d "github.com/carbynestack/ephemeral/pkg/discovery"
-	"github.com/carbynestack/ephemeral/pkg/discovery/fsm"
-	c "github.com/carbynestack/ephemeral/pkg/discovery/transport/client"
-	proto "github.com/carbynestack/ephemeral/pkg/discovery/transport/proto"
-	"github.com/carbynestack/ephemeral/pkg/discovery/transport/server"
+	d "github.com/Samrat7745/ephemeral/pkg/discovery"
+	"github.com/Samrat7745/ephemeral/pkg/discovery/fsm"
+	c "github.com/Samrat7745/ephemeral/pkg/discovery/transport/client"
+	proto "github.com/Samrat7745/ephemeral/pkg/discovery/transport/proto"
+	"github.com/Samrat7745/ephemeral/pkg/discovery/transport/server"
 	"time"
 
-	. "github.com/carbynestack/ephemeral/pkg/types"
+	. "github.com/Samrat7745/ephemeral/pkg/types"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"

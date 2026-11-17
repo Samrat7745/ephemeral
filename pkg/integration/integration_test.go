@@ -11,7 +11,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	. "github.com/carbynestack/ephemeral/pkg/ephemeral/io"
+	. "github.com/Samrat7745/ephemeral/pkg/ephemeral/io"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -19,7 +19,7 @@ import (
 	"sync"
 	"time"
 
-	. "github.com/carbynestack/ephemeral/pkg/types"
+	. "github.com/Samrat7745/ephemeral/pkg/types"
 
 	"github.com/google/uuid"
 	. "github.com/onsi/ginkgo/v2"

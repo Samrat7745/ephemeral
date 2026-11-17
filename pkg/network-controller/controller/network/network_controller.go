@@ -11,8 +11,8 @@ import (
 	"context"
 	"fmt"
 
-	mpcv1alpha1 "github.com/carbynestack/ephemeral/pkg/network-controller/apis/mpc/v1alpha1"
-	configtypes "github.com/carbynestack/ephemeral/pkg/types"
+	mpcv1alpha1 "github.com/Samrat7745/ephemeral/pkg/network-controller/apis/mpc/v1alpha1"
+	configtypes "github.com/Samrat7745/ephemeral/pkg/types"
 	istioapi "istio.io/api/networking/v1alpha3"
 	istiov1 "istio.io/client-go/pkg/apis/networking/v1"
 	corev1 "k8s.io/api/core/v1"

@@ -11,8 +11,8 @@ import (
 	"net/url"
 	"time"
 
+	"github.com/Samrat7745/ephemeral/pkg/types"
 	httpclient "github.com/Samrat7745/java-http-client"
-	"github.com/carbynestack/ephemeral/pkg/types"
 	"github.com/google/uuid"
 )
 

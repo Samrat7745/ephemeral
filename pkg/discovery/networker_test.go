@@ -9,8 +9,8 @@ import (
 	"errors"
 	"testing"
 
-	pb "github.com/carbynestack/ephemeral/pkg/discovery/transport/proto"
-	"github.com/carbynestack/ephemeral/pkg/network-controller/apis/mpc/v1alpha1"
+	pb "github.com/Samrat7745/ephemeral/pkg/discovery/transport/proto"
+	"github.com/Samrat7745/ephemeral/pkg/network-controller/apis/mpc/v1alpha1"
 	istioapi "istio.io/api/networking/v1alpha3"
 	istiov1 "istio.io/client-go/pkg/apis/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

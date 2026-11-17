@@ -6,14 +6,14 @@ package amphora_test
 
 import (
 	"encoding/json"
-	. "github.com/carbynestack/ephemeral/pkg/utils"
+	. "github.com/Samrat7745/ephemeral/pkg/utils"
 	"net/http"
 	"net/url"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	. "github.com/carbynestack/ephemeral/pkg/amphora"
+	. "github.com/Samrat7745/ephemeral/pkg/amphora"
 )
 
 var _ = Describe("Amphora", func() {

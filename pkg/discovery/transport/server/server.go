@@ -7,11 +7,11 @@ package server
 import (
 	"context"
 	"errors"
-	pb "github.com/carbynestack/ephemeral/pkg/discovery/transport/proto"
+	pb "github.com/Samrat7745/ephemeral/pkg/discovery/transport/proto"
 	"io"
 	"net"
 
-	. "github.com/carbynestack/ephemeral/pkg/types"
+	. "github.com/Samrat7745/ephemeral/pkg/types"
 
 	mb "github.com/vardius/message-bus"
 	"go.uber.org/zap"

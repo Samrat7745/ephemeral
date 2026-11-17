@@ -14,7 +14,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/carbynestack/ephemeral/pkg/types"
+	"github.com/Samrat7745/ephemeral/pkg/types"
 )
 
 func TestNewRequiresExactlyOneEndpoint(t *testing.T) {

@@ -9,7 +9,7 @@ package castor_test
 
 import (
 	"encoding/json"
-	. "github.com/carbynestack/ephemeral/pkg/utils"
+	. "github.com/Samrat7745/ephemeral/pkg/utils"
 	"github.com/google/uuid"
 	"net/http"
 	"net/url"
@@ -18,7 +18,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	. "github.com/carbynestack/ephemeral/pkg/castor"
+	. "github.com/Samrat7745/ephemeral/pkg/castor"
 )
 
 var _ = Describe("Castor", func() {

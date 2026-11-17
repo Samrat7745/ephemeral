@@ -7,7 +7,7 @@ package server
 import (
 	"context"
 	"errors"
-	pb "github.com/carbynestack/ephemeral/pkg/discovery/transport/proto"
+	pb "github.com/Samrat7745/ephemeral/pkg/discovery/transport/proto"
 	"net"
 
 	"google.golang.org/grpc/metadata"

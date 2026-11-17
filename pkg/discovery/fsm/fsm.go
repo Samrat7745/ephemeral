@@ -8,7 +8,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	proto "github.com/carbynestack/ephemeral/pkg/discovery/transport/proto"
+	proto "github.com/Samrat7745/ephemeral/pkg/discovery/transport/proto"
 	"sync"
 	"time"
 

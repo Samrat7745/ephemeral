@@ -16,9 +16,9 @@ import (
 	. "github.com/onsi/gomega"
 	"go.uber.org/zap"
 
-	"github.com/carbynestack/ephemeral/pkg/discovery"
-	. "github.com/carbynestack/ephemeral/pkg/types"
-	"github.com/carbynestack/ephemeral/pkg/utils"
+	"github.com/Samrat7745/ephemeral/pkg/discovery"
+	. "github.com/Samrat7745/ephemeral/pkg/types"
+	"github.com/Samrat7745/ephemeral/pkg/utils"
 )
 
 var _ = Describe("Main", func() {

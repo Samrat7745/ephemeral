@@ -11,7 +11,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
-	"github.com/carbynestack/ephemeral/pkg/utils"
+	"github.com/Samrat7745/ephemeral/pkg/utils"
 	"io/ioutil"
 	"math/big"
 	"os"
@@ -23,8 +23,8 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	"github.com/carbynestack/ephemeral/pkg/castor"
-	. "github.com/carbynestack/ephemeral/pkg/types"
+	"github.com/Samrat7745/ephemeral/pkg/castor"
+	. "github.com/Samrat7745/ephemeral/pkg/types"
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 )

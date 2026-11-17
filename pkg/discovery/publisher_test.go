@@ -5,8 +5,8 @@
 package discovery
 
 import (
-	"github.com/carbynestack/ephemeral/pkg/discovery/fsm"
-	pb "github.com/carbynestack/ephemeral/pkg/discovery/transport/proto"
+	"github.com/Samrat7745/ephemeral/pkg/discovery/fsm"
+	pb "github.com/Samrat7745/ephemeral/pkg/discovery/transport/proto"
 	"time"
 
 	. "github.com/onsi/ginkgo/v2"

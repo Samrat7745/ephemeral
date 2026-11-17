@@ -15,8 +15,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/carbynestack/ephemeral/pkg/network-controller/apis/mpc/v1alpha1"
-	"github.com/carbynestack/ephemeral/pkg/types"
+	"github.com/Samrat7745/ephemeral/pkg/network-controller/apis/mpc/v1alpha1"
+	"github.com/Samrat7745/ephemeral/pkg/types"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/yaml"

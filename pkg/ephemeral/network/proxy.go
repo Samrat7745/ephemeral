@@ -13,7 +13,7 @@ import (
 	"sync"
 	"time"
 
-	. "github.com/carbynestack/ephemeral/pkg/types"
+	. "github.com/Samrat7745/ephemeral/pkg/types"
 
 	"github.com/inetaf/tcpproxy"
 	"go.uber.org/zap"

@@ -6,13 +6,13 @@ package client
 
 import (
 	"context"
-	pb "github.com/carbynestack/ephemeral/pkg/discovery/transport/proto"
-	. "github.com/carbynestack/ephemeral/pkg/discovery/transport/server"
+	pb "github.com/Samrat7745/ephemeral/pkg/discovery/transport/proto"
+	. "github.com/Samrat7745/ephemeral/pkg/discovery/transport/server"
 	"go.uber.org/zap/zapcore"
 	"go.uber.org/zap/zaptest/observer"
 	"time"
 
-	. "github.com/carbynestack/ephemeral/pkg/types"
+	. "github.com/Samrat7745/ephemeral/pkg/types"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"

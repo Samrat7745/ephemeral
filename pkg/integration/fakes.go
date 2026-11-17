@@ -5,8 +5,8 @@
 package integration
 
 import (
-	"github.com/carbynestack/ephemeral/pkg/discovery/fsm"
-	. "github.com/carbynestack/ephemeral/pkg/types"
+	"github.com/Samrat7745/ephemeral/pkg/discovery/fsm"
+	. "github.com/Samrat7745/ephemeral/pkg/types"
 
 	mb "github.com/vardius/message-bus"
 )

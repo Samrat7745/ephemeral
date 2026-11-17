@@ -9,12 +9,12 @@ import (
 	"encoding/json"
 	"errors"
 
-	"github.com/carbynestack/ephemeral/pkg/amphora"
-	"github.com/carbynestack/ephemeral/pkg/castor"
-	. "github.com/carbynestack/ephemeral/pkg/ephemeral"
-	l "github.com/carbynestack/ephemeral/pkg/logger"
-	"github.com/carbynestack/ephemeral/pkg/opa"
-	"github.com/carbynestack/ephemeral/pkg/utils"
+	"github.com/Samrat7745/ephemeral/pkg/amphora"
+	"github.com/Samrat7745/ephemeral/pkg/castor"
+	. "github.com/Samrat7745/ephemeral/pkg/ephemeral"
+	l "github.com/Samrat7745/ephemeral/pkg/logger"
+	"github.com/Samrat7745/ephemeral/pkg/opa"
+	"github.com/Samrat7745/ephemeral/pkg/utils"
 	"os"
 
 	"math/big"
@@ -22,7 +22,7 @@ import (
 	"net/url"
 	"time"
 
-	. "github.com/carbynestack/ephemeral/pkg/types"
+	. "github.com/Samrat7745/ephemeral/pkg/types"
 
 	"go.uber.org/zap"
 )

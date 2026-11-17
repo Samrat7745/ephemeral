@@ -1,5 +1,4 @@
-module github.com/carbynestack/ephemeral
-
+module github.com/Samrat7745/ephemeral
 go 1.26.10
 
 require (

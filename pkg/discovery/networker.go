@@ -7,8 +7,8 @@ package discovery
 import (
 	"context"
 	"errors"
-	pb "github.com/carbynestack/ephemeral/pkg/discovery/transport/proto"
-	"github.com/carbynestack/ephemeral/pkg/network-controller/apis/mpc/v1alpha1"
+	pb "github.com/Samrat7745/ephemeral/pkg/discovery/transport/proto"
+	"github.com/Samrat7745/ephemeral/pkg/network-controller/apis/mpc/v1alpha1"
 	"sync"
 	"time"
 

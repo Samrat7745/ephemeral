@@ -7,8 +7,8 @@ package io_test
 import (
 	"context"
 	"fmt"
-	"github.com/carbynestack/ephemeral/pkg/amphora"
-	. "github.com/carbynestack/ephemeral/pkg/ephemeral/io"
+	"github.com/Samrat7745/ephemeral/pkg/amphora"
+	. "github.com/Samrat7745/ephemeral/pkg/ephemeral/io"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"go.uber.org/zap"

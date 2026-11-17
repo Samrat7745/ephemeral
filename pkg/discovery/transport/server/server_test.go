@@ -13,11 +13,11 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	"google.golang.org/grpc"
 
-	. "github.com/carbynestack/ephemeral/pkg/types"
+	. "github.com/Samrat7745/ephemeral/pkg/types"
 
 	. "github.com/onsi/gomega"
 
-	pb "github.com/carbynestack/ephemeral/pkg/discovery/transport/proto"
+	pb "github.com/Samrat7745/ephemeral/pkg/discovery/transport/proto"
 
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"

@@ -5,7 +5,7 @@
 package controller
 
 import (
-	"github.com/carbynestack/ephemeral/pkg/network-controller/controller/network"
+	"github.com/Samrat7745/ephemeral/pkg/network-controller/controller/network"
 )
 
 func init() {

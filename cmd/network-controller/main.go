@@ -14,10 +14,10 @@ import (
 	"os"
 	goruntime "runtime"
 
-	"github.com/carbynestack/ephemeral/pkg/network-controller/apis"
-	"github.com/carbynestack/ephemeral/pkg/network-controller/controller"
-	. "github.com/carbynestack/ephemeral/pkg/types"
-	"github.com/carbynestack/ephemeral/pkg/utils"
+	"github.com/Samrat7745/ephemeral/pkg/network-controller/apis"
+	"github.com/Samrat7745/ephemeral/pkg/network-controller/controller"
+	. "github.com/Samrat7745/ephemeral/pkg/types"
+	"github.com/Samrat7745/ephemeral/pkg/utils"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"

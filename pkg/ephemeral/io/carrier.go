@@ -9,7 +9,7 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
-	"github.com/carbynestack/ephemeral/pkg/amphora"
+	"github.com/Samrat7745/ephemeral/pkg/amphora"
 	"go.uber.org/zap"
 	"io"
 	"io/ioutil"

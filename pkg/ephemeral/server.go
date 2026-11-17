@@ -10,9 +10,9 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"github.com/carbynestack/ephemeral/pkg/discovery/fsm"
-	. "github.com/carbynestack/ephemeral/pkg/types"
-	. "github.com/carbynestack/ephemeral/pkg/utils"
+	"github.com/Samrat7745/ephemeral/pkg/discovery/fsm"
+	. "github.com/Samrat7745/ephemeral/pkg/types"
+	. "github.com/Samrat7745/ephemeral/pkg/utils"
 	"io/ioutil"
 	"mime"
 	"net/http"
@@ -22,8 +22,8 @@ import (
 
 	"github.com/google/uuid"
 
-	c "github.com/carbynestack/ephemeral/pkg/discovery/transport/client"
-	pb "github.com/carbynestack/ephemeral/pkg/discovery/transport/proto"
+	c "github.com/Samrat7745/ephemeral/pkg/discovery/transport/client"
+	pb "github.com/Samrat7745/ephemeral/pkg/discovery/transport/proto"
 
 	mb "github.com/vardius/message-bus"
 

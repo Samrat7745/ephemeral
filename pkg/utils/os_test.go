@@ -14,8 +14,8 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	"github.com/carbynestack/ephemeral/pkg/utils"
-	. "github.com/carbynestack/ephemeral/pkg/utils"
+	"github.com/Samrat7745/ephemeral/pkg/utils"
+	. "github.com/Samrat7745/ephemeral/pkg/utils"
 )
 
 var _ = Describe("OS utils", func() {

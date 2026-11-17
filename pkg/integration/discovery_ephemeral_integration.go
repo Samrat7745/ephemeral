@@ -7,11 +7,11 @@ package integration
 import (
 	"context"
 	"fmt"
-	discovery "github.com/carbynestack/ephemeral/pkg/discovery"
-	pb "github.com/carbynestack/ephemeral/pkg/discovery/transport/proto"
-	"github.com/carbynestack/ephemeral/pkg/discovery/transport/server"
-	p "github.com/carbynestack/ephemeral/pkg/ephemeral"
-	. "github.com/carbynestack/ephemeral/pkg/types"
+	discovery "github.com/Samrat7745/ephemeral/pkg/discovery"
+	pb "github.com/Samrat7745/ephemeral/pkg/discovery/transport/proto"
+	"github.com/Samrat7745/ephemeral/pkg/discovery/transport/server"
+	p "github.com/Samrat7745/ephemeral/pkg/ephemeral"
+	. "github.com/Samrat7745/ephemeral/pkg/types"
 	"time"
 
 	. "github.com/onsi/ginkgo/v2"

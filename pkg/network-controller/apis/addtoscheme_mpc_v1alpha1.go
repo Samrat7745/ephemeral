@@ -1,7 +1,7 @@
 package apis
 
 import (
-	"github.com/carbynestack/ephemeral/pkg/network-controller/apis/mpc/v1alpha1"
+	"github.com/Samrat7745/ephemeral/pkg/network-controller/apis/mpc/v1alpha1"
 )
 
 func init() {

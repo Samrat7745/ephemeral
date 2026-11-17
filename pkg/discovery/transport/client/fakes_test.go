@@ -7,7 +7,7 @@ package client
 import (
 	"context"
 	"errors"
-	pb "github.com/carbynestack/ephemeral/pkg/discovery/transport/proto"
+	pb "github.com/Samrat7745/ephemeral/pkg/discovery/transport/proto"
 	"io"
 
 	"google.golang.org/grpc"

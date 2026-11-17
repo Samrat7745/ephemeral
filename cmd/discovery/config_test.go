@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	. "github.com/carbynestack/ephemeral/pkg/types"
+	. "github.com/Samrat7745/ephemeral/pkg/types"
 )
 
 func writeConfig(t *testing.T, content string) string {

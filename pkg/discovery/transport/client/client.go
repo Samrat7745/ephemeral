@@ -7,11 +7,11 @@ package client
 import (
 	"context"
 	"errors"
-	pb "github.com/carbynestack/ephemeral/pkg/discovery/transport/proto"
+	pb "github.com/Samrat7745/ephemeral/pkg/discovery/transport/proto"
 	"io"
 	"time"
 
-	. "github.com/carbynestack/ephemeral/pkg/types"
+	. "github.com/Samrat7745/ephemeral/pkg/types"
 
 	"go.uber.org/zap"
 	"google.golang.org/grpc"

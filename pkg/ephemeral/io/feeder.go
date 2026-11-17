@@ -7,9 +7,9 @@ package io
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/carbynestack/ephemeral/pkg/amphora"
-	"github.com/carbynestack/ephemeral/pkg/ephemeral/network"
-	. "github.com/carbynestack/ephemeral/pkg/types"
+	"github.com/Samrat7745/ephemeral/pkg/amphora"
+	"github.com/Samrat7745/ephemeral/pkg/ephemeral/network"
+	. "github.com/Samrat7745/ephemeral/pkg/types"
 	"strings"
 	"time"
 

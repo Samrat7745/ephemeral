@@ -6,8 +6,8 @@
 package opa_test
 
 import (
-	"github.com/carbynestack/ephemeral/pkg/amphora"
-	. "github.com/carbynestack/ephemeral/pkg/opa"
+	"github.com/Samrat7745/ephemeral/pkg/amphora"
+	. "github.com/Samrat7745/ephemeral/pkg/opa"
 	"go.uber.org/zap"
 	"net/http"
 	"net/http/httptest"

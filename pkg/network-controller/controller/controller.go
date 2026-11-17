@@ -8,7 +8,7 @@
 package controller
 
 import (
-	"github.com/carbynestack/ephemeral/pkg/types"
+	"github.com/Samrat7745/ephemeral/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 

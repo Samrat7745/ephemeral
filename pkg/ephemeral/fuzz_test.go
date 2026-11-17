@@ -12,7 +12,7 @@ import (
 	"strings"
 	"testing"
 
-	. "github.com/carbynestack/ephemeral/pkg/types"
+	. "github.com/Samrat7745/ephemeral/pkg/types"
 )
 
 // FuzzGetUserFromAuthHeader: arbitrary headers and claim paths must never panic; a successful result has to be

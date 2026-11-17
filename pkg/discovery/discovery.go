@@ -7,10 +7,10 @@ package discovery
 import (
 	"context"
 	"errors"
-	"github.com/carbynestack/ephemeral/pkg/discovery/fsm"
-	pb "github.com/carbynestack/ephemeral/pkg/discovery/transport/proto"
-	t "github.com/carbynestack/ephemeral/pkg/discovery/transport/server"
-	. "github.com/carbynestack/ephemeral/pkg/types"
+	"github.com/Samrat7745/ephemeral/pkg/discovery/fsm"
+	pb "github.com/Samrat7745/ephemeral/pkg/discovery/transport/proto"
+	t "github.com/Samrat7745/ephemeral/pkg/discovery/transport/server"
+	. "github.com/Samrat7745/ephemeral/pkg/types"
 	"sync"
 	"time"
 

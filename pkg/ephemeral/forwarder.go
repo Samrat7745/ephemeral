@@ -6,9 +6,9 @@ package ephemeral
 
 import (
 	"context"
-	"github.com/carbynestack/ephemeral/pkg/discovery/fsm"
-	pb "github.com/carbynestack/ephemeral/pkg/discovery/transport/proto"
-	. "github.com/carbynestack/ephemeral/pkg/types"
+	"github.com/Samrat7745/ephemeral/pkg/discovery/fsm"
+	pb "github.com/Samrat7745/ephemeral/pkg/discovery/transport/proto"
+	. "github.com/Samrat7745/ephemeral/pkg/types"
 
 	"go.uber.org/zap"
 )

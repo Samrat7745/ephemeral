@@ -11,14 +11,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/carbynestack/ephemeral/pkg/discovery/fsm"
+	"github.com/Samrat7745/ephemeral/pkg/discovery/fsm"
 	"time"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"go.uber.org/zap"
 
-	. "github.com/carbynestack/ephemeral/pkg/types"
+	. "github.com/Samrat7745/ephemeral/pkg/types"
 	"net/http"
 	"net/http/httptest"
 )

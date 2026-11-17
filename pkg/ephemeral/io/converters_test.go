@@ -10,7 +10,7 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	// . "github.com/carbynestack/ephemeral/pkg/ephemeral/io"
+	// . "github.com/Samrat7745/ephemeral/pkg/ephemeral/io"
 )
 
 var _ = Describe("Converters", func() {

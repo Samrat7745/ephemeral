@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/carbynestack/ephemeral/pkg/opa"
+	"github.com/Samrat7745/ephemeral/pkg/opa"
 	"go.uber.org/zap"
 )
 
