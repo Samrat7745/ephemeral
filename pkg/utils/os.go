@@ -114,8 +114,7 @@ func CreateTLSConfig(mountPath string) (*tls.Config, error) {
 	// Create a CertPool and add the CA certificate
 	caCertPool := x509.NewCertPool()
 	if !caCertPool.AppendCertsFromPEM(caCertBytes) {
-		// Returning (nil, nil) here would silently disable TLS in the callers, which check for a nil config.
-		return nil, errors.New("no valid PEM encoded CA certificate found in " + caCertPath)
+		return nil, err
 	}
 
 	// Create and return the tls.Config object

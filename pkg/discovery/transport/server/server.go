@@ -103,16 +103,13 @@ func (d *TransportServer) Events(stream pb.Discovery_EventsServer) error {
 	}
 	d.conf.Logger.Debugw("Start handling events", ConnID, connID, EventScope, scope)
 	// Read all outgoing events from the broadcast topic.
-	// The very same function value must be used to unsubscribe: the message bus compares handlers by identity, a
-	// freshly created closure never matches and the subscription of a finished game would leak.
-	forward := d.forwardToStream(stream, scope, connID)
-	_ = d.mb.Subscribe(broadcastTopic, forward)
+	_ = d.mb.Subscribe(broadcastTopic, d.forwardToStream(stream, scope, connID))
 	errCh := make(chan error)
 	go d.forwardFromStream(stream, errCh)
 	// Block until we receive an error.
 	err = <-errCh
 	d.conf.Logger.Debugw("Event handling received error", "Error", err, ConnID, connID, EventScope, scope)
-	_ = d.mb.Unsubscribe(broadcastTopic, forward)
+	_ = d.mb.Unsubscribe(broadcastTopic, d.forwardToStream(stream, scope, connID))
 	d.conf.Logger.Debug("Unsubscribed forwardToStream from the broadcast topic")
 	return err
 }

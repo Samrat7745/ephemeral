@@ -47,6 +47,7 @@ roleRef:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
+  creationTimestamp: null
   name: discovery
   namespace: {{ .Release.Namespace }}
 rules:
@@ -55,96 +56,33 @@ rules:
     resources:
       - pods
     verbs:
-      - get
-      - list
-      - watch
+      - '*'
   - apiGroups:
       - 'mpc.bosch.com'
     resources:
       - networks
     verbs:
-      - create
-      - delete
-      - get
-      - list
-      - watch
+      - '*'
   - apiGroups:
       - 'networking.istio.io'
     resources:
       - gateways
     verbs:
-      - get
-      - list
-      - watch
+      - '*'
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
+  creationTimestamp: null
   name: network-controller
   namespace: {{ .Release.Namespace }}
 rules:
   - apiGroups:
-      - ""
+      - '*'
     resources:
-      - pods
+      - '*'
     verbs:
-      - get
-      - list
-      - watch
-      - update
-      - patch
-  - apiGroups:
-      - ""
-    resources:
-      - services
-    verbs:
-      - get
-      - list
-      - watch
-      - create
-      - update
-      - patch
-      - delete
-  - apiGroups:
-      - ""
-    resources:
-      - events
-    verbs:
-      - create
-      - patch
-  - apiGroups:
-      - mpc.bosch.com
-    resources:
-      - networks
-    verbs:
-      - get
-      - list
-      - watch
-  - apiGroups:
-      - networking.istio.io
-    resources:
-      - gateways
-      - virtualservices
-    verbs:
-      - get
-      - list
-      - watch
-      - create
-      - update
-      - patch
-      - delete
-  - apiGroups:
-      - coordination.k8s.io
-    resources:
-      - leases
-    verbs:
-      - get
-      - list
-      - watch
-      - create
-      - update
-      - patch
-      - delete
+      - '*'
 ---
 apiVersion: v1
 kind: ServiceAccount

@@ -1,16 +1,12 @@
 #
-# Copyright (c) 2021-2026 - for information on the respective copyright owner
+# Copyright (c) 2021-2023 - for information on the respective copyright owner
 # see the NOTICE file and/or the repository https://github.com/carbynestack/ephemeral.
 #
 # SPDX-License-Identifier: Apache-2.0
 #
-# Generated from config/crd/bases (controller-gen); do not edit by hand.
----
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
-  annotations:
-    controller-gen.kubebuilder.io/version: v0.23.0
   name: networks.mpc.bosch.com
 spec:
   group: mpc.bosch.com
@@ -21,47 +17,17 @@ spec:
     singular: network
   scope: Namespaced
   versions:
-  - name: v1alpha1
-    schema:
-      openAPIV3Schema:
-        description: Network is the Schema for the networks API
-        properties:
-          apiVersion:
-            description: |-
-              APIVersion defines the versioned schema of this representation of an object.
-              Servers should convert recognized schemas to the latest internal value, and
-              may reject unrecognized values.
-              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
-            type: string
-          kind:
-            description: |-
-              Kind is a string value representing the REST resource this object represents.
-              Servers may infer this from the endpoint the client submits requests to.
-              Cannot be updated.
-              In CamelCase.
-              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
-            type: string
-          metadata:
-            type: object
-          spec:
-            description: NetworkSpec defines the desired state of Network
-            properties:
-              port:
-                description: Port is the port exposed on the Istio gateway.
-                format: int32
-                type: integer
-              targetPort:
-                description: TargetPort is the port of the target pod the traffic
-                  is routed to.
-                format: int32
-                type: integer
-            type: object
-          status:
-            description: NetworkStatus defines the observed state of Network
-            properties:
-              ready:
-                type: boolean
-            type: object
-        type: object
-    served: true
-    storage: true
+    - name: v1alpha1
+      served: true
+      storage: true
+      schema:
+        openAPIV3Schema:
+          type: object
+          properties:
+            spec:
+              type: object
+              properties:
+                port:
+                  type: integer
+                targetPort:
+                  type: integer

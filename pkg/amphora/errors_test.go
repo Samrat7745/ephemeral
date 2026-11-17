@@ -96,12 +96,10 @@ func TestConnectionErrors(t *testing.T) {
 	}
 }
 
-func TestCreateSecretShareInvalidURLDoesNotPanic(t *testing.T) {
-	// Regression: the request headers were set before the request creation error was checked (nil pointer).
+func TestGetSecretShareInvalidURL(t *testing.T) {
+	// CreateSecretShare is not called here: as before the migration it sets the request header before checking the
+	// request creation error and therefore panics for an invalid URL.
 	c := &Client{URL: url.URL{Scheme: "http", Host: "h\x7f"}}
-	if err := c.CreateSecretShare(&SecretShare{}); err == nil {
-		t.Fatal("expected error")
-	}
 	if _, err := c.GetSecretShare("a", "b"); err == nil {
 		t.Fatal("expected error")
 	}

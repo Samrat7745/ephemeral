@@ -36,15 +36,6 @@ spec:
           requests:
             memory: "100Mi"
         imagePullPolicy: {{ .Values.discovery.image.pullPolicy }}
-        securityContext:
-          allowPrivilegeEscalation: false
-          readOnlyRootFilesystem: true
-          runAsNonRoot: true
-          capabilities:
-            drop:
-              - ALL
-          seccompProfile:
-            type: RuntimeDefault
         volumeMounts:
           - name: config-volume
             mountPath: /etc/config
@@ -59,7 +50,7 @@ apiVersion: v1
 metadata:
   name: {{ include "ephemeral.fullname" . }}-discovery
   namespace: {{ .Release.Namespace }}
-  {{- if .Values.discovery.service.annotations }}
+  {{- if .Values.ephemeral.service.annotations }}
   annotations:
 {{ .Values.discovery.service.annotations | toYaml | trim | indent 4 }}
   {{- end}}

@@ -30,14 +30,12 @@ import (
 )
 
 const (
-	proxyAddress      = "localhost"
-	basePort          = int32(10000)
-	appName           = "mpc-program"
-	baseDir           = "/mp-spdz"
-	ipFile            = baseDir + "/ip-file"
-	tcpCheckerTimeout = 50 * time.Millisecond
-	// mpcShutdownGrace is the maximum time Activate waits for the MPC process of a finished game to terminate.
-	mpcShutdownGrace    = 5 * time.Second
+	proxyAddress        = "localhost"
+	basePort            = int32(10000)
+	appName             = "mpc-program"
+	baseDir             = "/mp-spdz"
+	ipFile              = baseDir + "/ip-file"
+	tcpCheckerTimeout   = 50 * time.Millisecond
 	defaultPath         = baseDir + "/Programs/Source/" + appName + ".mpc"
 	defaultSchedulePath = baseDir + "/Programs/Schedules/" + appName + ".sch"
 )
@@ -79,11 +77,7 @@ func (s *SPDZWrapper) Execute(event *pb.Event) error {
 	s.logger.Debug("Starting MPC execution")
 	res, err := s.activate(s.ctx)
 	if err != nil {
-		select {
-		case s.errCh <- err:
-		default:
-			// an earlier error already fills the buffer of this request.
-		}
+		s.errCh <- err
 		return err
 	}
 	s.logger.Debugw("SPDZWrapper is writing response", GameID, s.ctx.Act.GameID)
@@ -200,20 +194,7 @@ func (s *SPDZEngine) Activate(ctx *CtxConfig) ([]byte, error) {
 		s.logger.Errorw(msg, GameID, act.GameID)
 		return nil, fmt.Errorf("%s: %s", msg, err)
 	}
-	mpcDone := make(chan struct{})
-	go func() {
-		defer close(mpcDone)
-		s.startMPC(ctx)
-	}()
-	// Give the MPC process and the tuple streamers of this game the chance to terminate before returning. Otherwise,
-	// they overlap with the next game on the same pod (ports, ip file, pipes) - see docs/consecutive-games.md.
-	defer func() {
-		select {
-		case <-mpcDone:
-		case <-time.After(mpcShutdownGrace):
-			s.logger.Warnw("MPC execution did not terminate in time", GameID, act.GameID)
-		}
-	}()
+	go s.startMPC(ctx)
 	defer s.feeder.Close()
 	feedPort := s.getFeedPort()
 	doneCh := make(chan struct{})
@@ -291,7 +272,7 @@ func (s *SPDZEngine) startMPC(ctx *CtxConfig) {
 	s.logger.Debugw("Starting MPC", GameID, ctx.Act.GameID)
 	nThreads, err := s.getNumberOfThreads()
 	if err != nil {
-		reportError(ctx, fmt.Errorf("failed to determine the number of threads: %v", err))
+		ctx.ErrCh <- fmt.Errorf("failed to determine the number of threads: %v", err)
 		return
 	}
 	wg := new(sync.WaitGroup)
@@ -311,7 +292,7 @@ func (s *SPDZEngine) startMPC(ctx *CtxConfig) {
 	var tupleStreamers = []TupleStreamer{}
 	gameUUID, err := uuid.Parse(ctx.Act.GameID)
 	if err != nil {
-		reportError(ctx, fmt.Errorf("error parsing gameID: %v", err))
+		ctx.ErrCh <- fmt.Errorf("error parsing gameID: %v", err)
 		return
 	}
 	for _, tt := range castor.SupportedTupleTypes {
@@ -320,7 +301,7 @@ func (s *SPDZEngine) startMPC(ctx *CtxConfig) {
 			streamer, err := s.streamerFactory(s.logger, tt, s.config, s.playerDataPaths[tt.SpdzProtocol], gameUUID, thread)
 			if err != nil {
 				s.logger.Errorw("Error when initializing tuple streamer", GameID, ctx.Act.GameID, TupleType, tt, "Error", err)
-				reportError(ctx, err)
+				ctx.ErrCh <- err
 				return
 			}
 			tupleStreamers = append(tupleStreamers, streamer)
@@ -341,7 +322,7 @@ func (s *SPDZEngine) startMPC(ctx *CtxConfig) {
 		if err != nil {
 			s.logger.Errorw("Error while executing the user code", GameID, ctx.Act.GameID, "StdErr", string(stderr), "StdOut", string(stdout), "error", err)
 			err := fmt.Errorf("error while executing the user code: %v", err)
-			reportError(ctx, err)
+			ctx.ErrCh <- err
 		} else {
 			s.logger.Debugw("Computation finished", GameID, ctx.Act.GameID, "StdErr", string(stderr), "StdOut", string(stdout))
 		}
@@ -352,16 +333,7 @@ func (s *SPDZEngine) startMPC(ctx *CtxConfig) {
 	case err := <-streamErrCh:
 		error := fmt.Errorf("error while streaming tuples: %v", err)
 		s.logger.Error(error)
-		reportError(ctx, error)
-	}
-}
-
-// reportError hands an execution error to the request without ever blocking: the channel is buffered and read at
-// most once per request, a second error (or an unset channel) must not pin the goroutine of a finished game.
-func reportError(ctx *CtxConfig, err error) {
-	select {
-	case ctx.ErrCh <- err:
-	default:
+		ctx.ErrCh <- error
 	}
 }
 

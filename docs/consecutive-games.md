@@ -14,11 +14,17 @@ The reproduction tests below run without a cluster. What they establish and what
   on the same pods both run through to `GameSuccess`, also when the first one failed
   (`TestTwoConsecutiveGamesOnSamePodsBothSucceed`, `TestGameErrorInFirstGameDoesNotAffectSecond`). The discovery
   bookkeeping is therefore not what breaks the second game.
-* `ephemeral.Server` called twice in a row does not hand the first game's response or error to the second request and
-  does not block (`TestSecondActivation*`).
+* `ephemeral.Server` called twice in a row does not hand the first game's response or error to the second request
+  (`TestSecondActivation*`).
 * A proxy can be restarted on the same local port after a game (`TestProxyRestartOnSameLocalPort`).
 
-## Defects found with the tests and fixed
+## Defects found with the tests (fixes reverted)
+
+The fixes listed below were made during the Kubernetes client migration and have been **reverted** again so that the
+migration does not change the behaviour of the services (behaviour parity with upstream `ae8710e`). The column "Fix"
+describes the reverted change. The corresponding tests are skipped with `known: SPECS-2171`, or were changed to pin the
+original behaviour, or were removed (`TestClosedStreamIsUnsubscribedFromBroadcast`); `go test -race` reports the data
+races again. The log line `MPC execution did not terminate in time` mentioned below no longer exists.
 
 | Defect | Effect on a later game | Fix | Test |
 | --- | --- | --- | --- |
@@ -28,7 +34,7 @@ The reproduction tests below run without a cluster. What they establish and what
 | `Server.respCh` was unbuffered and the handler read the (shared) server fields after starting the player. | The engine of a game whose request timed out blocked forever on `respCh <- result`; a second request replacing the fields while the first still runs mixed up channels. | `respCh` buffered, channels captured per request | `TestSecondActivation*`, `TestSPDZWrapperDoesNotBlock...` |
 | `TransportServer.Events` unsubscribed with a new closure, which never matches (the message bus compares handlers by identity). | Every finished game left a broadcast subscription behind that keeps writing to the dead stream (error log per event for the rest of the process lifetime). | unsubscribe with the subscribed function value | `TestClosedStreamIsUnsubscribedFromBroadcast` |
 | `FSM.Run` wrote `current = Stopped` without the lock that `Current()` takes (`ServiceNG.verifyGameState`). | Data race on the state of a finished game when a late event arrives. | guarded by the FSM mutex | `go test -race ./pkg/discovery` |
-| `IstioNetworker.sync` ignored the error of listing the gateways and synced with an empty list. | An API hiccup released every port that is in use; the next pod gets a port that is already served by another Gateway. | the error is returned, the port state is untouched | `TestSyncFailureKeepsPortsInUse` |
+| `IstioNetworker.sync` ignored the error of listing the gateways and synced with an empty list. | An API hiccup released every port that is in use; the next pod gets a port that is already served by another Gateway. | the error is returned, the port state is untouched | `TestSyncFailureIsNotReported` (pins the original behaviour) |
 | `NewPortsState` accepted inverted/out-of-bounds ranges (`100:1`, `0:10`, `1:70000`). | `GetFreePort` handed out ports outside of the range. | range validation | `TestNewPortsStateValidation`, `FuzzNewPortsState` |
 
 ## Not fixed (documented, tests skipped with `known: SPECS-2171`)

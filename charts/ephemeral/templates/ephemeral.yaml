@@ -14,7 +14,7 @@ spec:
     metadata:
       annotations:
       {{- if .Values.ephemeral.service.annotations }}
-{{ .Values.ephemeral.service.annotations | toYaml | trim | indent 8 }}
+{{ .Values.ephemeral.service.annotations | toYaml | trim | indent 10 }}
       {{- end}}
         autoscaling.knative.dev/minScale: "{{ .Values.ephemeral.minScale }}"
     spec:
@@ -30,16 +30,6 @@ spec:
         - name: "{{ .Chart.Name }}-ephemeral"
           image: "{{ .Values.ephemeral.image.registry }}/{{ .Values.ephemeral.image.repository }}:{{ .Values.ephemeral.image.tag }}"
           imagePullPolicy: {{ .Values.ephemeral.image.pullPolicy }}
-          securityContext:
-            allowPrivilegeEscalation: false
-            runAsNonRoot: true
-            runAsUser: {{ .Values.ephemeral.runAsUser }}
-            runAsGroup: {{ .Values.ephemeral.runAsUser }}
-            capabilities:
-              drop:
-                - ALL
-            seccompProfile:
-              type: RuntimeDefault
           ports:
             - name: http1
               containerPort: 8080
@@ -53,11 +43,9 @@ spec:
           volumeMounts:
             - name: config-volume
               mountPath: /etc/config
-            {{- if .Values.tls.enabled }}
             - name: tls-secret-volume
               mountPath: /etc/tls
               readOnly: true
-            {{- end }}
           {{- if or .Values.ephemeral.resources.requests.memory .Values.ephemeral.resources.requests.cpu .Values.ephemeral.resources.limits.memory .Values.ephemeral.resources.limits.cpu }}
           resources:
             {{- if or .Values.ephemeral.resources.requests.memory .Values.ephemeral.resources.requests.cpu }}
@@ -83,11 +71,9 @@ spec:
         - name: config-volume
           configMap:
             name: {{ include "ephemeral.fullname" . }}-config1
-        {{- if .Values.tls.enabled }}
         - name: tls-secret-volume
           secret:
-            secretName: {{ required "tls.secret must be set when tls.enabled is true" .Values.tls.secret }}
-        {{- end }}
+            secretName: {{ .Values.tls.secret }}
       serviceAccountName: knative-serving
 ---
 apiVersion: v1

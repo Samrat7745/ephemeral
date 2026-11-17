@@ -86,7 +86,9 @@ var _ = Describe("Proxy", func() {
 			conn, err := dialer(ctx, "localhost", "5555")
 			Expect(conn).To(BeNil())
 			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(Equal("cancelled connection attempt for localhost:5555 - context done"))
+			// The connect timer (0) and the cancelled context are ready at the same time; select picks one at random, so
+			// the original dialer reports either the cancellation or the failed (single) connection attempt.
+			Expect(err.Error()).To(Or(Equal("cancelled connection attempt for localhost:5555 - context done"), ContainSubstring("connection refused")))
 		})
 	})
 	Context("when using the retrying dialer with context", func() {

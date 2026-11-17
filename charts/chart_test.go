@@ -192,14 +192,11 @@ func TestTLS(t *testing.T) {
 		var cfg types.SPDZEngineConfig
 		configOf(t, docs, "ephemeral-rel-config1", &cfg, false)
 		kn := knative(t, docs)
+		// Original chart: the TLS secret volume is always rendered (with an empty secretName when TLS is off);
+		// only the engine config switches TLS off.
 		vols := get(kn, "spec", "template", "spec", "volumes").([]interface{})
-		if cfg.TlsEnabled || len(vols) != 1 {
+		if cfg.TlsEnabled || len(vols) != 2 {
 			t.Errorf("tls=%v volumes=%v", cfg.TlsEnabled, vols)
-		}
-		for _, m := range container(t, kn)["volumeMounts"].([]interface{}) {
-			if m.(map[string]interface{})["mountPath"] == "/etc/tls" {
-				t.Error("tls volume mounted although disabled")
-			}
 		}
 	})
 	t.Run("enabled with secret", func(t *testing.T) {
@@ -224,16 +221,17 @@ func TestTLS(t *testing.T) {
 			t.Errorf("tls=%v secretVolume=%v mounted=%v", cfg.TlsEnabled, found, mounted)
 		}
 	})
-	t.Run("enabled without secret fails", func(t *testing.T) {
-		_, _, err := render(t, "tls.enabled=true")
-		if err == nil || !strings.Contains(err.Error(), "tls.secret must be set when tls.enabled is true") {
-			t.Fatalf("expected the required error, got %v", err)
+	t.Run("enabled without secret is not validated", func(t *testing.T) {
+		// Original behaviour: the chart does not require tls.secret, the secret volume is rendered without a name.
+		if _, _, err := render(t, "tls.enabled=true"); err != nil {
+			t.Fatalf("expected the chart to render, got %v", err)
 		}
 	})
-	t.Run("secret without enabled is ignored", func(t *testing.T) {
+	t.Run("secret without enabled is still mounted", func(t *testing.T) {
+		// Original chart: the secret volume does not depend on tls.enabled; only the engine config does.
 		docs := mustRender(t, "tls.secret=unused")
-		if strings.Contains(string(mustMarshal(t, knative(t, docs))), "unused") {
-			t.Error("secret must not be used by the ephemeral service when tls is disabled")
+		if !strings.Contains(string(mustMarshal(t, knative(t, docs))), "unused") {
+			t.Error("original chart renders the tls secret volume regardless of tls.enabled")
 		}
 	})
 }
@@ -246,38 +244,35 @@ func mustMarshal(t *testing.T, v interface{}) []byte {
 	return b
 }
 
-func TestRunAsUser(t *testing.T) {
-	for _, tc := range []struct{ set, want string }{{"", "1000"}, {"ephemeral.runAsUser=2000", "2000"}} {
-		var docs map[string]map[string]interface{}
-		if tc.set == "" {
-			docs = mustRender(t)
-		} else {
-			docs = mustRender(t, tc.set)
-		}
-		sc := container(t, knative(t, docs))["securityContext"].(map[string]interface{})
-		got := func(k string) string { return strings.TrimSuffix(strings.TrimSpace(jsonNum(sc[k])), ".0") }
-		if got("runAsUser") != tc.want || got("runAsGroup") != tc.want || sc["runAsNonRoot"] != true || sc["allowPrivilegeEscalation"] != false {
-			t.Errorf("%s: unexpected security context %v", tc.set, sc)
-		}
+// Original behaviour: the chart does not set a security context for the ephemeral container.
+func TestNoSecurityContext(t *testing.T) {
+	if sc, ok := container(t, knative(t, mustRender(t)))["securityContext"]; ok {
+		t.Errorf("unexpected security context %v", sc)
 	}
 }
 
 func jsonNum(v interface{}) string { b, _ := json.Marshal(v); return string(b) }
 
+// Original behaviour of the annotation templates: the discovery service annotations are guarded by the ephemeral
+// service annotations, and ephemeral service annotations are indented wrongly, so setting them breaks the rendering.
 func TestServiceAnnotations(t *testing.T) {
+	// discovery annotations alone are not rendered
 	docs := mustRender(t,
 		"discovery.service.annotations.networking\\.istio\\.io/exportTo=*",
 		"discovery.service.annotations.foo=bar",
-		"ephemeral.service.annotations.client\\.example/a=b",
 		"ephemeral.minScale=2")
 	var svc corev1.Service
 	convert(t, docs["Service/ephemeral-rel-discovery"], &svc)
-	if svc.Annotations["networking.istio.io/exportTo"] != "*" || svc.Annotations["foo"] != "bar" || len(svc.Annotations) != 2 {
+	if len(svc.Annotations) != 0 {
 		t.Errorf("discovery annotations %v", svc.Annotations)
 	}
 	ann := get(knative(t, docs), "spec", "template", "metadata", "annotations").(map[string]interface{})
-	if ann["client.example/a"] != "b" || ann["autoscaling.knative.dev/minScale"] != "2" {
+	if len(ann) != 1 || ann["autoscaling.knative.dev/minScale"] != "2" {
 		t.Errorf("ephemeral annotations %v", ann)
+	}
+	// ephemeral annotations make the rendered YAML invalid
+	if _, _, err := render(t, "ephemeral.service.annotations.client\\.example/a=b"); err == nil {
+		t.Error("expected the rendering to fail")
 	}
 	// defaults: no annotations on the discovery service, only the scale annotation on the Knative service
 	docs = mustRender(t)

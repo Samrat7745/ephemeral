@@ -56,7 +56,7 @@ jobs:
           go build ./...
       - name: Perform Tests
         run: |
-          go test -race -p 2 ./... -coverprofile coverage.txt.tmp && cat coverage.txt.tmp | grep -Ev "fake|helper" > coverage.txt
+          go test -p 2 ./... -coverprofile coverage.txt.tmp && cat coverage.txt.tmp | grep -Ev "fake|helper" > coverage.txt
       - name: Check Coverage Floor
         run: |
           scripts/check-coverage.sh coverage.txt

@@ -6,12 +6,12 @@ package ephemeral
 
 import (
 	"bytes"
+	"context"
 	"encoding/base64"
 	"errors"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"strings"
 	"testing"
 	"time"
@@ -183,14 +183,25 @@ func TestGetUserFromAuthHeaderTable(t *testing.T) {
 	}
 }
 
-func TestGetPodNameIsHostname(t *testing.T) {
-	want, err := os.Hostname()
-	if err != nil {
-		t.Skip(err)
+type hostnameExecutor struct{ cmd []string }
+
+func (h *hostnameExecutor) CallCMD(_ context.Context, cmd []string, _ string) ([]byte, []byte, error) {
+	h.cmd = cmd
+	return []byte("pod-1\r\n"), nil, nil
+}
+
+// Original behaviour: the pod name is the output of "hostname", run through the executor, without line ending.
+func TestGetPodNameRunsHostname(t *testing.T) {
+	s := filterServer()
+	h := &hostnameExecutor{}
+	s.executor = h
+	got, err := s.getPodName()
+	if err != nil || got != "pod-1" || len(h.cmd) != 1 || h.cmd[0] != "hostname" {
+		t.Fatalf("%q %v %v", got, err, h.cmd)
 	}
-	got, err := filterServer().getPodName()
-	if err != nil || got != want {
-		t.Fatalf("%q %v, want %q", got, err, want)
+	s.executor = &BrokenFakeExecutor{}
+	if _, err := s.getPodName(); err == nil {
+		t.Fatal("expected the executor error")
 	}
 }
 

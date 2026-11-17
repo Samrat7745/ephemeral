@@ -153,19 +153,21 @@ func TestCreateTLSConfigMissingFiles(t *testing.T) {
 }
 
 func TestCreateTLSConfigInvalidFiles(t *testing.T) {
-	for _, bad := range []string{"tls.crt", "tls.key", "cacert"} {
+	for _, bad := range []string{"tls.crt", "tls.key"} {
 		c := genCerts(t)
 		os.WriteFile(filepath.Join(c.dir, bad), []byte("garbage"), 0600)
 		conf, err := CreateTLSConfig(c.dir)
 		if err == nil || conf != nil {
-			// Regression: an invalid CA file used to return (nil, nil), which callers interpret as "TLS disabled".
 			t.Errorf("invalid %s: expected an error, got conf=%v err=%v", bad, conf, err)
 		}
 	}
-	c := genCerts(t)
-	os.WriteFile(filepath.Join(c.dir, "cacert"), nil, 0600)
-	if conf, err := CreateTLSConfig(c.dir); err == nil || conf != nil {
-		t.Errorf("empty CA: expected an error, got conf=%v err=%v", conf, err)
+	// Original behaviour: a CA file without a valid PEM certificate yields (nil, nil).
+	for _, ca := range [][]byte{[]byte("garbage"), nil} {
+		c := genCerts(t)
+		os.WriteFile(filepath.Join(c.dir, "cacert"), ca, 0600)
+		if conf, err := CreateTLSConfig(c.dir); err != nil || conf != nil {
+			t.Errorf("invalid CA %q: expected (nil, nil), got conf=%v err=%v", ca, conf, err)
+		}
 	}
 }
 

@@ -37,7 +37,11 @@ const consecutiveGameID = "71b2a100-f3f6-11e9-81b4-2a2ae2dbcce4"
 
 func newConsecutiveServer() *Server {
 	conf := &SPDZEngineTypedConfig{ComputationTimeout: time.Second, StateTimeout: time.Second}
-	return NewServer("sub", func(*CtxConfig) error { return nil }, func(*CtxConfig) ([]byte, error) { return nil, nil }, zap.NewNop().Sugar(), conf)
+	s := NewServer("sub", func(*CtxConfig) error { return nil }, func(*CtxConfig) ([]byte, error) { return nil, nil }, zap.NewNop().Sugar(), conf)
+	// The pod name is read by running "hostname" through the executor (original behaviour); a fake keeps the tests
+	// independent of the environment (the real commander runs "script" in "/", which fails for non-root users).
+	s.executor = &FakeExecutor{}
+	return s
 }
 
 // serve sends one activation request through the compilation and activation handlers, like the real HTTP chain.

@@ -59,7 +59,7 @@ func TestOpaFailureIsReported(t *testing.T) {
 	}
 }
 
-func TestOpaInputContainsExecutorAndDefaultPolicy(t *testing.T) {
+func TestOpaInputContainsExecutorAndEmptyPolicyWithoutTag(t *testing.T) {
 	opa := &scriptedOpa{allowed: true}
 	f, act, ctx := feederWith(opa, []amphora.Tag{{Key: "owner", Value: "bob"}})
 	if _, err := f.LoadFromSecretStoreAndFeed(act, "", ctx); err != nil {
@@ -70,9 +70,9 @@ func TestOpaInputContainsExecutorAndDefaultPolicy(t *testing.T) {
 	if in["executor"] != "alice" || inputs[0].Owner != "bob" {
 		t.Fatalf("%+v", in)
 	}
-	// Regression: a secret without accessPolicy tag must be evaluated with the default policy, not with "".
-	if inputs[0].AccessPolicy != DefaultPolicy {
-		t.Fatalf("access policy %q, want %q", inputs[0].AccessPolicy, DefaultPolicy)
+	// Original behaviour: a secret without accessPolicy tag is passed to OPA with an empty access policy.
+	if inputs[0].AccessPolicy != "" {
+		t.Fatalf("access policy %q, want empty", inputs[0].AccessPolicy)
 	}
 }
 

@@ -83,16 +83,18 @@ func (c *Client) CreateSecretShare(os *SecretShare) error {
 	if err != nil {
 		return err
 	}
-	req, err := http.NewRequest(http.MethodPost, c.URL.String()+secretShareURI, bytes.NewBuffer(jsonMarshalled))
+	req, err := http.NewRequest(http.MethodPost, c.URL.String()+fmt.Sprintf("%s", secretShareURI), bytes.NewBuffer(jsonMarshalled))
+	req.Header.Add("Content-Type", "application/json")
 	if err != nil {
 		return err
 	}
-	req.Header.Add("Content-Type", "application/json")
 	body, err := c.doRequest(req, http.StatusCreated)
 	if err != nil {
 		return err
 	}
-	return body.Close()
+	// Only release the connection; the result of Close does not change the outcome (as before the migration).
+	_ = body.Close()
+	return nil
 }
 
 // doRequest is a helper method that sends an HTTP request, compares the returned response code with expected and

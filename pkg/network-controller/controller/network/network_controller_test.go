@@ -31,7 +31,7 @@ func TestReconcileCreatesServiceGatewayAndVirtualService(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{Name: "pod-1", Namespace: "default", UID: "uid-1", Labels: map[string]string{podLabel: "pod-1"}},
 		Spec:       mpcv1alpha1.NetworkSpec{Port: 31000, TargetPort: 5000},
 	}
-	pod := &corev1.Pod{ObjectMeta: metav1.ObjectMeta{Name: "pod-1", Namespace: "default"}}
+	pod := &corev1.Pod{ObjectMeta: metav1.ObjectMeta{Name: "pod-1", Namespace: "default", Labels: map[string]string{"app": "mpc"}}}
 	c := fake.NewClientBuilder().WithScheme(scheme).WithObjects(nw, pod).Build()
 	r := &ReconcileNetwork{client: c, scheme: scheme, config: &configtypes.NetworkControllerConfig{TlsEnabled: true, TlsSecret: "sec"}}
 

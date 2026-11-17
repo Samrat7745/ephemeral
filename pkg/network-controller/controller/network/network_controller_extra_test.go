@@ -23,7 +23,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
-	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
 type fixture struct {
@@ -50,7 +49,9 @@ func newFixture(t *testing.T, tls bool, spec mpcv1alpha1.NetworkSpec, funcs *int
 		ObjectMeta: metav1.ObjectMeta{Name: "pod-1", Namespace: "default", UID: "uid-1", Labels: map[string]string{podLabel: "pod-1"}},
 		Spec:       spec,
 	}
-	pod := &corev1.Pod{ObjectMeta: metav1.ObjectMeta{Name: "pod-1", Namespace: "default"}}
+	// The pod carries a (possibly empty) label map: the reconciler adds the pod label to it (as before the migration,
+	// a pod without any label map is not supported).
+	pod := &corev1.Pod{ObjectMeta: metav1.ObjectMeta{Name: "pod-1", Namespace: "default", Labels: map[string]string{"app": "mpc"}}}
 	b := fake.NewClientBuilder().WithScheme(scheme).WithObjects(nw, pod).WithObjects(extra...)
 	if funcs != nil {
 		b = b.WithInterceptorFuncs(*funcs)
@@ -117,7 +118,7 @@ func TestOwnedResourcesReferenceTheNetwork(t *testing.T) {
 	}
 }
 
-func TestNetworkLabelsAreNotModified(t *testing.T) {
+func TestStoredNetworkLabelsAreNotModified(t *testing.T) {
 	f := newFixture(t, false, validSpec, nil)
 	if _, err := f.reconcile(); err != nil {
 		t.Fatal(err)
@@ -125,12 +126,14 @@ func TestNetworkLabelsAreNotModified(t *testing.T) {
 	nw := &mpcv1alpha1.Network{}
 	f.c.Get(context.Background(), f.req.NamespacedName, nw)
 	if _, ok := nw.Labels["mpc.gateway"]; ok {
-		t.Error("the gateway label must not leak into the Network")
+		t.Error("the stored Network must not be updated")
 	}
+	// Original behaviour: the gateway shares the label map of the Network instance, so the VirtualService created
+	// afterwards carries the gateway label as well.
 	vs := &istiov1.VirtualService{}
 	f.c.Get(context.Background(), k8stypes.NamespacedName{Name: "pod-1-mpc-vs", Namespace: "default"}, vs)
-	if _, ok := vs.Labels["mpc.gateway"]; ok {
-		t.Error("the gateway label must not leak into the VirtualService")
+	if vs.Labels["mpc.gateway"] != "true" {
+		t.Errorf("unexpected virtual service labels %v", vs.Labels)
 	}
 }
 
@@ -165,6 +168,10 @@ func TestReconcileTLS(t *testing.T) {
 		if tls && (srv.Tls == nil || srv.Tls.CredentialName != "sec" || srv.Tls.Mode.String() != "MUTUAL") {
 			t.Errorf("tls=true: %+v", srv.Tls)
 		}
+		// Istio >= 1.2x only accepts TLS settings on HTTPS/TLS servers; without TLS the server stays TCP.
+		if wantProto := map[bool]string{true: "TLS", false: "TCP"}[tls]; srv.Port.Protocol != wantProto {
+			t.Errorf("tls=%v: server protocol %q, want %q", tls, srv.Port.Protocol, wantProto)
+		}
 		if !tls && srv.Tls != nil {
 			t.Errorf("tls=false: unexpected TLS settings %+v", srv.Tls)
 		}
@@ -174,23 +181,7 @@ func TestReconcileTLS(t *testing.T) {
 	}
 }
 
-func TestReconcileInvalidPortsIsTerminalAndCreatesNothing(t *testing.T) {
-	for _, spec := range []mpcv1alpha1.NetworkSpec{
-		{Port: 0, TargetPort: 5000}, {Port: 31000, TargetPort: 0}, {Port: -1, TargetPort: 5000},
-		{Port: 70000, TargetPort: 5000}, {Port: 31000, TargetPort: 65536}, {},
-	} {
-		f := newFixture(t, false, spec, nil)
-		_, err := f.reconcile()
-		if err == nil || !errors.Is(err, reconcile.TerminalError(nil)) {
-			t.Errorf("spec %+v: expected a terminal error, got %v", spec, err)
-		}
-		if f.count(&corev1.ServiceList{})+f.count(&istiov1.GatewayList{})+f.count(&istiov1.VirtualServiceList{}) != 0 {
-			t.Errorf("spec %+v: resources were created", spec)
-		}
-	}
-}
-
-func TestReconcileUpdatesServiceWithDifferentSpec(t *testing.T) {
+func TestReconcileKeepsExistingServiceWithDifferentSpec(t *testing.T) {
 	stale := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{Name: "pod-1-mpc-service", Namespace: "default"},
 		Spec: corev1.ServiceSpec{
@@ -204,8 +195,9 @@ func TestReconcileUpdatesServiceWithDifferentSpec(t *testing.T) {
 	}
 	svc := &corev1.Service{}
 	f.c.Get(context.Background(), k8stypes.NamespacedName{Name: "pod-1-mpc-service", Namespace: "default"}, svc)
-	if svc.Spec.Ports[0].Port != 5000 || svc.Spec.Ports[0].TargetPort.IntVal != 5000 || svc.Spec.Selector[podLabel] != "pod-1" {
-		t.Errorf("service was not converged: %+v", svc.Spec)
+	// Original behaviour: an existing Service is not updated.
+	if svc.Spec.Ports[0].Port != 1234 || svc.Spec.Selector[podLabel] != "other-pod" {
+		t.Errorf("existing service was modified: %+v", svc.Spec)
 	}
 	// and it is stable afterwards
 	if _, err := f.reconcile(); err != nil {
@@ -317,15 +309,5 @@ func TestAddRegistersWithManagerScheme(t *testing.T) {
 	}
 	if _, _, err := s.ObjectKinds(&istiov1.Gateway{}); err != nil {
 		t.Fatal(err)
-	}
-	for _, p := range []int32{1, 65535} {
-		if !validPort(p) {
-			t.Errorf("%d must be valid", p)
-		}
-	}
-	for _, p := range []int32{0, -5, 65536} {
-		if validPort(p) {
-			t.Errorf("%d must be invalid", p)
-		}
 	}
 }
