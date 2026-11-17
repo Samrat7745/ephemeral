@@ -39,7 +39,7 @@ func TestTrustedCertificates(t *testing.T) {
 	dir := t.TempDir()
 	bad := filepath.Join(dir, "bad.pem")
 	os.WriteFile(bad, []byte("not a certificate"), 0600)
-	if _, err := New(Options{Endpoints: []Endpoint{ep}, TrustedCertificates: []string{bad}}); err == nil || !strings.Contains(err.Error(), "no certificates found") {
+	if _, err := New(Options{Endpoints: []Endpoint{ep}, TrustedCertificates: []string{bad}}); err == nil || !strings.Contains(err.Error(), "Unable to configure certificate management "+bad) {
 		t.Errorf("invalid pem: %v", err)
 	}
 	if _, err := New(Options{Endpoints: []Endpoint{ep}, TrustedCertificates: []string{filepath.Join(dir, "missing.pem")}}); err == nil {

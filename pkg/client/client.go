@@ -3,17 +3,15 @@ package client
 import (
 	"bytes"
 	"context"
-	"crypto/tls"
-	"crypto/x509"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"net/http"
 	"net/url"
-	"os"
 	"time"
 
+	httpclient "github.com/Samrat7745/java-http-client"
 	"github.com/carbynestack/ephemeral/pkg/types"
 	"github.com/google/uuid"
 )
@@ -96,21 +94,17 @@ func (o Options) httpClient() (*http.Client, error) {
 	if o.HTTPClient != nil {
 		return o.HTTPClient, nil
 	}
-	pool, err := x509.SystemCertPool()
-	if err != nil || pool == nil {
-		pool = x509.NewCertPool()
+	// The HTTP client library provides the trust management (system roots plus
+	// TrustedCertificates) and the redirect policy of the Java client.
+	c, err := httpclient.New[string](
+		httpclient.WithoutSSLValidation(o.NoSSLValidation),
+		httpclient.WithTrustedCertificates(o.TrustedCertificates...),
+		httpclient.WithTimeout(o.Timeout),
+	)
+	if err != nil {
+		return nil, err
 	}
-	for _, p := range o.TrustedCertificates {
-		pem, err := os.ReadFile(p)
-		if err != nil {
-			return nil, err
-		}
-		if !pool.AppendCertsFromPEM(pem) {
-			return nil, fmt.Errorf("no certificates found in %s", p)
-		}
-	}
-	return &http.Client{Timeout: o.Timeout, Transport: &http.Transport{
-		TLSClientConfig: &tls.Config{RootCAs: pool, InsecureSkipVerify: o.NoSSLValidation}}}, nil
+	return c.HTTPClient(), nil
 }
 
 // Client talks to a single Ephemeral service.
@@ -162,7 +156,8 @@ func (c *Client) Execute(ctx context.Context, a Activation) (*Result, error) {
 	}
 	req.Header.Set("Content-Type", "application/json")
 	if c.token != nil {
-		req.Header.Set("Authorization", "Bearer "+c.token())
+		token := httpclient.BearerToken(c.token())
+		req.Header.Set(token.Name, token.Value)
 	}
 	resp, err := c.http.Do(req)
 	if err != nil {

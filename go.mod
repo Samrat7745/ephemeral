@@ -21,6 +21,8 @@ require (
 	sigs.k8s.io/controller-runtime v0.25.2
 )
 
+require github.com/Samrat7745/java-http-client v0.0.0-20261117073951-d54d9102e1d7
+
 require (
 	github.com/Masterminds/semver/v3 v3.4.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
