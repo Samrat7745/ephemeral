@@ -16,26 +16,44 @@ The reproduction tests below run without a cluster. What they establish and what
   bookkeeping is therefore not what breaks the second game.
 * `ephemeral.Server` called twice in a row does not hand the first game's response or error to the second request
   (`TestSecondActivation*`).
-* A proxy can be restarted on the same local port after a game (`TestProxyRestartOnSameLocalPort`).
+* A proxy can be restarted on the same local port after a game (`TestProxyRestartOnSameLocalPort`), and `Stop` returns
+  after a failed `Run` that follows a successful game (`TestProxyStopAfterFailedRunFollowingSuccessfulGame`).
 
 ## Defects found with the tests (fixes reverted)
 
 The fixes listed below were made during the Kubernetes client migration and have been **reverted** again so that the
 migration does not change the behaviour of the services (behaviour parity with upstream `ae8710e`). The column "Fix"
 describes the reverted change. The corresponding tests are skipped with `known: SPECS-2171`, or were changed to pin the
-original behaviour, or were removed (`TestClosedStreamIsUnsubscribedFromBroadcast`); `go test -race` reports the data
-races again. The log line `MPC execution did not terminate in time` mentioned below no longer exists.
+original behaviour, or were removed (`TestClosedStreamIsUnsubscribedFromBroadcast`). The log line
+`MPC execution did not terminate in time` mentioned below no longer exists. The data race fixes were applied again
+later, see [Data race fixes](#data-race-fixes-applied-2026-11-17).
 
 | Defect | Effect on a later game | Fix | Test |
 | --- | --- | --- | --- |
-| `Proxy.Stop` waited on the `activeProxyIndicatorCh` of the previous game when `Run` failed before the proxy was started (e.g. `TCPCheck ... failed`), and then called `Wait` on a proxy that never ran. | After a first successful game, a failing second game never returned from `SPDZEngine.Activate`; the player FSM callback hung until the HTTP timeout. This is the failure mode seen in the log. | indicator channel is reset/created synchronously in `Run` (also removes a data race) | `TestProxyStopAfterFailedRunFollowingSuccessfulGame` |
 | `SPDZEngine.Activate` returned as soon as the result was read; the MPC process (`Player-Online.x`) and the tuple streamers kept running in the background (`go s.startMPC`). | The next game on the pod starts while the previous one still holds the SPDZ port (5000+id), the ip file and tuple pipes. The race detector reports this overlap in the existing tests. | `Activate` waits (at most `mpcShutdownGrace`, 5s) for `startMPC` to terminate | `go test -race ./pkg/ephemeral` |
 | `startMPC` / `SPDZWrapper.Execute` wrote errors to a buffered(1) channel with a blocking send. | A second error (or a request that already returned) pinned the goroutine and thereby the SPDZ process of a finished game. | non-blocking `reportError` | `TestSPDZWrapperDoesNotBlockAfterRequestGaveUp` |
 | `Server.respCh` was unbuffered and the handler read the (shared) server fields after starting the player. | The engine of a game whose request timed out blocked forever on `respCh <- result`; a second request replacing the fields while the first still runs mixed up channels. | `respCh` buffered, channels captured per request | `TestSecondActivation*`, `TestSPDZWrapperDoesNotBlock...` |
 | `TransportServer.Events` unsubscribed with a new closure, which never matches (the message bus compares handlers by identity). | Every finished game left a broadcast subscription behind that keeps writing to the dead stream (error log per event for the rest of the process lifetime). | unsubscribe with the subscribed function value | `TestClosedStreamIsUnsubscribedFromBroadcast` |
-| `FSM.Run` wrote `current = Stopped` without the lock that `Current()` takes (`ServiceNG.verifyGameState`). | Data race on the state of a finished game when a late event arrives. | guarded by the FSM mutex | `go test -race ./pkg/discovery` |
 | `IstioNetworker.sync` ignored the error of listing the gateways and synced with an empty list. | An API hiccup released every port that is in use; the next pod gets a port that is already served by another Gateway. | the error is returned, the port state is untouched | `TestSyncFailureIsNotReported` (pins the original behaviour) |
 | `NewPortsState` accepted inverted/out-of-bounds ranges (`100:1`, `0:10`, `1:70000`). | `GetFreePort` handed out ports outside of the range. | range validation | `TestNewPortsStateValidation`, `FuzzNewPortsState` |
+
+## Data race fixes (applied 2026-11-17)
+
+`go test -race ./...` is clean again. These changes remove data races only, except for the `Proxy.Stop` fix, which
+also removes the hang described in the table.
+
+| Defect | Effect | Fix | Test |
+| --- | --- | --- | --- |
+| `Proxy.Stop` waited on the `activeProxyIndicatorCh` of the previous game when `Run` failed before the proxy was started (e.g. `TCPCheck ... failed`), and then called `Wait` on a proxy that never ran. | After a first successful game, a failing second game never returned from `SPDZEngine.Activate`; the player FSM callback hung until the HTTP timeout. This is the failure mode seen in the log. | `Run` creates the tcpproxy and the indicator channel synchronously, under a mutex, and the proxy goroutine only uses its own copies; `Stop` reads them under the same mutex | `TestProxyStopAfterFailedRunFollowingSuccessfulGame` |
+| `FSM.Run` wrote `current = Stopped` without the lock that `Current()` takes (`ServiceNG.verifyGameState`). | Data race on the state of a finished game when a late event arrives. | `setStopped` writes the state under the FSM mutex | `go test -race ./pkg/discovery` |
+| The game's bus subscriber rewrote `Meta.FSM` on the event it received. The message bus hands the same event pointer to every subscriber of a topic. | Concurrent writes to one event; a subscriber could see another game's FSM. | the subscriber works on a copy of the event and its metadata | `go test -race ./pkg/discovery` |
+| `Proxy.checkConnectionToPeers` appended errors from several goroutines to one slice without a lock. | Lost errors / corrupted slice when several peer checks fail at once. | slice guarded by a mutex | `go test -race ./pkg/ephemeral/network` |
+| `NewGame` ignored the error of `bus.Subscribe`; `ServiceNG.processIn` used the `nil` game after `NewGame` failed. | Panic instead of a reported error. | the error is returned / `processIn` returns after reporting it | - |
+
+The race in `pkg/ephemeral` was in the tests only: the `Activate` specs left the background `startMPC` goroutine
+blocked on a `nil` `ErrCh` while later specs replaced the global `utils.Fio`. The specs now give the context an
+`ErrCh` and wait for `startMPC` to report. `SPDZEngine.Activate` itself still returns without waiting for `startMPC`
+(row 2 of the table above, unchanged).
 
 ## Not fixed (documented, tests skipped with `known: SPECS-2171`)
 

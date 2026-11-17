@@ -11,7 +11,6 @@ import (
 	d "github.com/Samrat7745/ephemeral/pkg/discovery"
 	"github.com/Samrat7745/ephemeral/pkg/discovery/fsm"
 	pb "github.com/Samrat7745/ephemeral/pkg/discovery/transport/proto"
-	"github.com/Samrat7745/ephemeral/pkg/ephemeral/network"
 	. "github.com/Samrat7745/ephemeral/pkg/types"
 	"strings"
 	"time"
@@ -67,11 +66,17 @@ func NewPlayer(ctx context.Context, bus mb.MessageBus, stateTimeout time.Duratio
 		ev := e.(*pb.Event)
 		call.pb.PublishWithBody(ev.Name, playerParams.Name, ev)
 	})
+	if err != nil {
+		return nil, err
+	}
 	err = bus.Subscribe(playerParams.Name, func(e interface{}) {
 		// All events received on player's name topic are forwarded to the state machine.
 		ev := e.(*fsm.Event)
 		f.Write(ev)
 	})
+	if err != nil {
+		return nil, err
+	}
 	return &Player1{
 		name:       playerParams.Name,
 		fsm:        f,
@@ -104,7 +109,6 @@ type Player1 struct {
 	fsm        *fsm.FSM
 	messageBus mb.MessageBus
 	logger     *zap.SugaredLogger
-	nc         network.NetworkChecker
 	me         MPCEngine
 	params     *PlayerParams
 	call       *Callbacker
@@ -155,14 +159,6 @@ type Callbacker struct {
 	playerParams *PlayerParams
 	errCh        chan error
 	logger       *zap.SugaredLogger
-}
-
-// registration forwards registration request to the discovery service.
-func (c *Callbacker) registration() func(e interface{}) error {
-	return func(e interface{}) error {
-		c.sendEvent(Register, DiscoveryTopic, e)
-		return nil
-	}
 }
 
 // sendPlayerReady notifies discovery service about its readiness.

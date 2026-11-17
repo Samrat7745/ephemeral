@@ -24,9 +24,8 @@ const (
 
 var (
 	// BasePort is the base for the port number that is used by the proxy.
-	BasePort        = int32(5000)
-	baseNetworkName = "player-network"
-	ctx             = context.TODO()
+	BasePort = int32(5000)
+	ctx      = context.TODO()
 )
 
 // Event is a generic message sent between clients and discovery service.
@@ -190,14 +189,14 @@ func (s *ServiceNG) registerPlayer(pl *pb.Player, gameID string) error {
 		pl.Port = s.networks[pl.Pod]
 	}()
 	s.logger.Debug("Register PLayer", "player", pl, "gameId", gameID)
-	p, ok := s.players[gameID]
+	_, ok := s.players[gameID]
 	// Create a new map for the GameID
 	if !ok {
 		s.logger.Debug("Create new Player map")
 		players := map[PlayerID]*pb.Player{}
 		s.players[gameID] = players
 	}
-	p, _ = s.players[gameID]
+	p := s.players[gameID]
 
 	// Do not register the player twice.
 	if _, ok := p[PlayerID(pl.Id)]; ok {
@@ -258,6 +257,7 @@ func (s *ServiceNG) processIn(e interface{}) {
 		g, err := NewGame(ctx, ev.GameID, s.bus, s.stateTimeout, s.computationTimeout, s.logger, s.playerCount)
 		if err != nil {
 			s.errCh <- err
+			return
 		}
 		gameErrCh := make(chan error, 1)
 		go func() {
@@ -302,8 +302,5 @@ func (s *ServiceNG) processOut(e interface{}) {
 
 // verifyGameState checks whether it is still allowed to join the game.
 func (s *ServiceNG) verifyGameState(g *Game) bool {
-	if g.fsm.Current() != fsm.Stopped {
-		return true
-	}
-	return false
+	return g.fsm.Current() != fsm.Stopped
 }

@@ -150,7 +150,6 @@ func (c *Carrier) buildHeader(playerID int32) []byte {
 
 // Read reads the response from the TCP connection and unmarshals it.
 func (c *Carrier) Read(conv ResponseConverter, bulkObjects bool) (*Result, error) {
-	resp := []byte{}
 	resp, err := ioutil.ReadAll(c.Conn)
 	if len(resp) == 0 {
 		c.Logger.Errorw("Carrier read closed with empty response", connectionInfo, c.connection)

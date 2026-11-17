@@ -90,11 +90,17 @@ func NewGame(ctx context.Context, id string, bus mb.MessageBus, stateTimeout tim
 	}
 	err = bus.Subscribe(id, func(e interface{}) {
 		// All events received on player's name topic are forwarded to the state machine.
-		ev := e.(*fsm.Event)
+		// The bus hands the same event to every subscriber of the topic, so work on a copy.
+		ev := *e.(*fsm.Event)
+		meta := *ev.Meta
 		// Rewrite the FSM link to treat them as internal events.
-		ev.Meta.FSM = f
-		f.Write(ev)
+		meta.FSM = f
+		ev.Meta = &meta
+		f.Write(&ev)
 	})
+	if err != nil {
+		return nil, err
+	}
 	return &Game{
 		id:  id,
 		fsm: f,

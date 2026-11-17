@@ -144,11 +144,18 @@ var _ = Describe("Spdz", func() {
 				Spdz: &SPDZEngineTypedConfig{
 					PlayerCount: 2,
 				},
+				// startMPC runs in the background and reports that the (missing) schedule cannot be read.
+				ErrCh: make(chan error, 1),
 			}
 		})
 		AfterEach(func() {
 			_ = os.RemoveAll(prepFolder)
 		})
+		// waitForMPC waits until the background startMPC goroutine is done, so it does not outlive the spec while
+		// later specs replace utils.Fio.
+		waitForMPC := func() {
+			Eventually(ctx.ErrCh).Should(Receive())
+		}
 		Context("when amphora parameters are provided", func() {
 			It("returns the result of the execution", func() {
 				input := "a"
@@ -157,6 +164,7 @@ var _ = Describe("Spdz", func() {
 				Expect(err).NotTo(HaveOccurred())
 				// Fake feeder simply echoes the first input parameter.
 				Expect(res).To(Equal([]byte(input)))
+				waitForMPC()
 			})
 		})
 		Context("when input parameters are defined in the request", func() {
@@ -167,6 +175,7 @@ var _ = Describe("Spdz", func() {
 				Expect(err).NotTo(HaveOccurred())
 				// Fake feeder simply echoes the first input parameter.
 				Expect(res).To(Equal([]byte(input)))
+				waitForMPC()
 			})
 		})
 		Context("when no input parameters are specified", func() {
@@ -175,6 +184,7 @@ var _ = Describe("Spdz", func() {
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(Equal("no MPC parameters specified"))
 				Expect(res).To(BeNil())
+				waitForMPC()
 			})
 		})
 		Context("when proxy fails to start", func() {

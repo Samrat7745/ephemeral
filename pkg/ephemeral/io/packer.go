@@ -153,9 +153,7 @@ func parcelsToSPDZ(prc []Parcel, o *[]byte) error {
 	if err != nil {
 		return errors.New(ErrParcelToSPDZ + err.Error())
 	}
-	out := make([]byte, ParcelSizeLength+ParcelSizeLength)
-	out = append(overallSizeInBytes, concatBody...)
-	*o = out
+	*o = append(overallSizeInBytes, concatBody...)
 	return nil
 }
 

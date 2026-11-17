@@ -122,6 +122,6 @@ func TestProxyStopAfterFailedRunFollowingSuccessfulGame(t *testing.T) {
 	select {
 	case <-done:
 	case <-time.After(2 * time.Second):
-		t.Skip("known: SPECS-2171 - Proxy.Stop blocks after a failed Run that follows a successful game: it waits on the stale activeProxyIndicatorCh of the previous game and calls Wait on a proxy that was never started")
+		t.Fatal("SPECS-2171: Proxy.Stop blocks after a failed Run that follows a successful game")
 	}
 }

@@ -53,11 +53,20 @@ type Proxy struct {
 	// is closed.
 	activeProxyIndicatorCh chan struct{}
 	tlsConfig              *tls.Config
+	// mux guards proxy and activeProxyIndicatorCh, which are replaced on every Run while the goroutine of the previous
+	// game may still be running.
+	mux sync.Mutex
 }
 
 // Run start the tcpproxy, makes sure it has started by means of a ping.
 func (p *Proxy) Run(ctx *CtxConfig, errCh chan error) error {
-	p.proxy = &tcpproxy.Proxy{}
+	proxy := &tcpproxy.Proxy{}
+	// A fresh indicator per game: Stop must never wait on the indicator of a previous game (SPECS-2171).
+	activeProxyIndicatorCh := make(chan struct{})
+	p.mux.Lock()
+	p.proxy = proxy
+	p.activeProxyIndicatorCh = activeProxyIndicatorCh
+	p.mux.Unlock()
 	p.ctx = ctx
 
 	var pats []*PingAwareTarget
@@ -74,11 +83,10 @@ func (p *Proxy) Run(ctx *CtxConfig, errCh chan error) error {
 	p.logger.Infow("Starting TCP Proxy", GameID, ctx.Act.GameID)
 	go func() {
 		defer close(errCh)
-		p.activeProxyIndicatorCh = make(chan struct{})
-		err := p.proxy.Start()
+		err := proxy.Start()
 		if err == nil {
-			close(p.activeProxyIndicatorCh)
-			err = p.proxy.Wait()
+			close(activeProxyIndicatorCh)
+			err = proxy.Wait()
 		}
 		errCh <- err
 	}()
@@ -104,6 +112,7 @@ func (p *Proxy) Run(ctx *CtxConfig, errCh chan error) error {
 // This implementation assumes that Proxy.ctx.ProxyEntries is ordered by playerId
 func (p *Proxy) checkConnectionToPeers() error {
 	var waitGroup sync.WaitGroup
+	var errorsMux sync.Mutex
 	var errorsCheckingConnection []error
 
 	// Check fully connected Graph, each edge checked once
@@ -116,7 +125,9 @@ func (p *Proxy) checkConnectionToPeers() error {
 			err := p.checkTCPConnectionToPeer(p.ctx.Context, proxyEntry)
 			defer waitGroup.Done()
 			if err != nil {
+				errorsMux.Lock()
 				errorsCheckingConnection = append(errorsCheckingConnection, err)
+				errorsMux.Unlock()
 			}
 		}()
 	}
@@ -179,10 +190,13 @@ func (p *Proxy) checkTCPConnectionToPeer(ctx context.Context, config *ProxyConfi
 // Stop closes the underlying tcpproxy and waits for it to finish.
 func (p *Proxy) Stop() {
 	p.logger.Debugw("Waiting for TCP proxy to stop", GameID, p.ctx.Act.GameID)
-	p.proxy.Close()
+	p.mux.Lock()
+	proxy, activeProxyIndicatorCh := p.proxy, p.activeProxyIndicatorCh
+	p.mux.Unlock()
+	proxy.Close()
 	select {
-	case <-p.activeProxyIndicatorCh:
-		p.proxy.Wait()
+	case <-activeProxyIndicatorCh:
+		proxy.Wait()
 	default:
 	}
 	p.logger.Debugw("Stopped the TCP proxy", GameID, p.ctx.Act.GameID)
